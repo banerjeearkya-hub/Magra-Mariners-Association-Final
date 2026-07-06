@@ -7,6 +7,8 @@ import '@gravity-ui/uikit/styles/styles.css';
 import './styles/global.css';
 import './App.css';
 
+import logoImg from './assets/logo.png';
+
 // Central Site Data
 import { siteData } from './data/siteData';
 
@@ -95,7 +97,7 @@ function App() {
             </main>
 
             {/* Footer */}
-            <Footer logo="/logo.png" navLinks={navLinks} />
+            <Footer logo={logoImg} navLinks={navLinks} />
             
             {/* Floating back-to-top widget */}
             <ScrollToTop />

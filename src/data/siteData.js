@@ -1,3 +1,7 @@
+import heroBgImg from '../assets/hero_bg.jpg';
+import presidentImg from '../assets/president.jpg';
+import secretaryImg from '../assets/secretary.jpg';
+
 export const siteData = {
   associationName: "Magra Mariners Association",
   associationAbbr: "MMA",
@@ -6,7 +10,7 @@ export const siteData = {
   hero: {
     title: "MAGRA MARINERS ASSOCIATION",
     subtitle: "United by Passion. Driven by Mariners.",
-    bgImage: "/assets/hero_bg.jpg",
+    bgImage: heroBgImg,
     ctaText: "Join Association",
     ctaLink: "#contact",
     secondaryText: "Learn More",
@@ -31,7 +35,7 @@ export const siteData = {
         id: "president",
         name: "Prasenjit Chakrabarty",
         position: "President",
-        image: "/assets/president.jpg",
+        image: presidentImg,
         bio: "Veteran supporter and local coordinator. Leading the association from the front, overseeing all club relations and governance.",
         socials: {
           facebook: "https://facebook.com",
@@ -44,7 +48,7 @@ export const siteData = {
         id: "secretary",
         name: "Dr. Kunal Batyabal",
         position: "Secretary",
-        image: "/assets/secretary.jpg",
+        image: secretaryImg,
         bio: "Distinguished academic and passionate football administrator. Managing operations, events, and community outreach.",
         socials: {
           facebook: "https://facebook.com",
@@ -112,6 +116,7 @@ export const siteData = {
     address: "MMA Clubhouse, Station Road, Magra, Hooghly, West Bengal, Pin - 712148",
     phone: "9475083599 / 8100328580 / 8961702684",
     email: "associationmagramariners@gmail.com",
+    formspreeId: "xvgowpzv", // Change this to your Formspree Form ID
     googleMapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14693.364426573887!2d88.3695279!3d22.97446545!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f893a749f1dbcb%3A0x673dbb108ff1e5cf!2sMogra%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1719999999999!5m2!1sen!2sin"
   }
 };

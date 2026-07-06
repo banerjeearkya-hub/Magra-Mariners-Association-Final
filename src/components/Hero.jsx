@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaChevronDown, FaUsers, FaInfoCircle } from 'react-icons/fa';
+import logoImg from '../assets/logo.png';
 import './Hero.css';
 
 const Hero = ({ data }) => {
@@ -27,7 +28,7 @@ const Hero = ({ data }) => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
         >
-          <img src="/logo.png" alt="MMA Crest" className="hero-crest glow-animation" />
+          <img src={logoImg} alt="MMA Crest" className="hero-crest glow-animation" />
         </motion.div>
 
         <motion.h1

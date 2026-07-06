@@ -7,15 +7,41 @@ import './Contact.css';
 const Contact = ({ data }) => {
   const [form] = Form.useForm();
 
-  const onFinish = (values) => {
-    console.log('Contact form submitted:', values);
-    message.success({
-      content: 'Thank you for reaching out! The Mariners will get back to you shortly.',
-      style: {
-        marginTop: '10vh',
-      },
-    });
-    form.resetFields();
+  const onFinish = async (values) => {
+    const hideLoading = message.loading({ content: 'Sending your message...', duration: 0 });
+    
+    try {
+      const response = await fetch(`https://formspree.io/f/${data.formspreeId || 'xvgowpzv'}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          name: values.name,
+          email: values.email,
+          subject: values.subject,
+          message: values.message
+        })
+      });
+      
+      hideLoading();
+      
+      if (response.ok) {
+        message.success({
+          content: 'Thank you for reaching out! Your message has been sent successfully.',
+          style: {
+            marginTop: '10vh',
+          },
+        });
+        form.resetFields();
+      } else {
+        throw new Error('Formspree response not ok');
+      }
+    } catch (error) {
+      hideLoading();
+      message.error('Failed to send message. Please try again later or email us directly.');
+    }
   };
 
   const onFinishFailed = (errorInfo) => {

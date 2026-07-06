@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import logoImg from '../assets/logo.png';
 import './Loader.css';
 
 const Loader = () => {
@@ -24,7 +25,7 @@ const Loader = () => {
           animate={{ scale: [0.8, 1.1, 1], opacity: 1 }}
           transition={{ duration: 1.5, repeat: Infinity, repeatType: "reverse" }}
         >
-          <img src="/logo.png" alt="MMA Logo" className="loader-logo" />
+          <img src={logoImg} alt="MMA Logo" className="loader-logo" />
         </motion.div>
         
         <motion.h2 

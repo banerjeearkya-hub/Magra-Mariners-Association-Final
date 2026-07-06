@@ -2,19 +2,19 @@
 
 :root {
   /* Brand Colors */
-  --color-maroon: #7B1C24;
-  --color-maroon-rgb: 123, 28, 36;
-  --color-maroon-light: #9B2833;
-  --color-maroon-dark: #4A0E13;
+  --color-maroon: #990F1B;
+  --color-maroon-rgb: 153, 15, 27;
+  --color-maroon-light: #D91A2A;
+  --color-maroon-dark: #59050C;
   
-  --color-green: #138844;
-  --color-green-rgb: 19, 136, 68;
-  --color-green-light: #1AAB56;
-  --color-green-dark: #0D5C2E;
+  --color-green: #0EB853;
+  --color-green-rgb: 14, 184, 83;
+  --color-green-light: #1ED760;
+  --color-green-dark: #075E29;
 
-  --color-accent: #1AAB56;
-  --color-accent-rgb: 26, 171, 86;
-  --color-accent-dark: #138844;
+  --color-accent: #1ED760;
+  --color-accent-rgb: 30, 215, 96;
+  --color-accent-dark: #0EB853;
 
   /* Theme Colors (Default Dark) */
   --bg-primary: #0F0A0B;      /* Deep pitch black with slight maroon hue */

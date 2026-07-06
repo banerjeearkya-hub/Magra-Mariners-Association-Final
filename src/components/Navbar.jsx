@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaBars, FaTimes, FaSun, FaMoon } from 'react-icons/fa';
+import logoImg from '../assets/logo.png';
 import './Navbar.css';
 
 const Navbar = ({ theme, toggleTheme, navLinks = [] }) => {
@@ -26,7 +27,7 @@ const Navbar = ({ theme, toggleTheme, navLinks = [] }) => {
       <div className="navbar-container">
         {/* Logo and Brand Name */}
         <a href="#home" className="navbar-logo-container">
-          <img src="/logo.png" alt="MMA Logo" className="navbar-logo" />
+          <img src={logoImg} alt="MMA Logo" className="navbar-logo" />
           <div className="navbar-brand-text">
             <span className="navbar-brand-title">MAGRA MARINERS</span>
             <span className="navbar-brand-subtitle">ASSOCIATION</span>
