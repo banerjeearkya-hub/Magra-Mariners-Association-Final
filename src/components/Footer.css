@@ -1,6 +1,6 @@
 .footer-section {
-  background-color: #0B0607; /* Darkest shade */
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: #6B1024; /* Premium Deep Maroon */
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
   padding: 80px 0 0 0;
   position: relative;
@@ -159,9 +159,9 @@
 
 /* Bottom Bar */
 .footer-bottom-bar {
-  background-color: #070404;
+  background-color: #4A0B17; /* Darker Maroon for bottom bar */
   padding: 25px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.03);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .footer-bottom-container {
