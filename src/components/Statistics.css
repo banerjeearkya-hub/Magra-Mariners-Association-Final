@@ -1,0 +1,108 @@
+.stats-section {
+  position: relative;
+  /* background matching stadium backdrop */
+  background-image: linear-gradient(
+    to bottom,
+    rgba(15, 10, 11, 0.95),
+    rgba(30, 18, 20, 0.95)
+  ), url('/assets/hero_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  overflow: hidden;
+}
+
+.stats-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(123, 28, 36, 0.25) 0%,
+    rgba(19, 136, 68, 0.25) 100%
+  );
+  z-index: 1;
+}
+
+.stats-container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30px;
+}
+
+@media (max-width: 992px) {
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-container {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+  }
+}
+
+.stat-card {
+  padding: 40px 20px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--glass-border);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(26, 171, 86, 0.3);
+}
+
+.stat-icon-wrapper {
+  font-size: 2.2rem;
+  color: var(--color-accent);
+  margin-bottom: 20px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 70px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform var(--transition-normal);
+}
+
+.stat-card:hover .stat-icon-wrapper {
+  transform: rotateY(360deg);
+  background-color: rgba(26, 171, 86, 0.1);
+  color: white;
+}
+
+.stat-number-box {
+  font-family: var(--font-secondary);
+  font-size: 3rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1.1;
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+.stat-suffix {
+  color: var(--color-green-light);
+}
+
+.stat-label {
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 0.05em;
+}

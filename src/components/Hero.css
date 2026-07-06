@@ -1,0 +1,181 @@
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  color: white;
+  text-align: center;
+  padding: 0 4%;
+}
+
+.hero-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  z-index: 1;
+  transform: scale(1.05);
+  filter: brightness(0.7) contrast(1.1);
+  animation: zoomBg 20s ease-out infinite alternate;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* Blend maroon and green dark gradients into black */
+  background: linear-gradient(
+    to bottom,
+    rgba(74, 14, 19, 0.4) 0%,
+    rgba(13, 92, 46, 0.3) 50%,
+    rgba(15, 10, 11, 0.95) 100%
+  );
+  z-index: 2;
+}
+
+.hero-curve {
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  z-index: 4;
+  color: var(--bg-primary);
+}
+
+.hero-curve svg {
+  width: 100%;
+  height: 40px;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 3;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 40px;
+}
+
+.hero-logo-box {
+  margin-bottom: 25px;
+}
+
+.hero-crest {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
+  border-radius: 50%;
+  background: rgba(30, 18, 20, 0.4);
+  padding: 5px;
+}
+
+.hero-title {
+  font-family: var(--font-secondary);
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, #FFFFFF 40%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+  margin-bottom: 40px;
+  max-width: 650px;
+  letter-spacing: 0.05em;
+}
+
+.hero-btn-container {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hero-btn {
+  font-size: 1rem;
+  padding: 15px 35px;
+  min-width: 190px;
+}
+
+.hero-btn-sec {
+  border-color: white !important;
+  color: white !important;
+}
+
+.hero-btn-sec:hover {
+  background: white !important;
+  color: black !important;
+}
+
+/* Scroll indicator */
+.scroll-down-indicator {
+  position: absolute;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-size: 1.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  transition: color var(--transition-fast);
+}
+
+.scroll-down-indicator a:hover {
+  color: var(--color-accent);
+}
+
+/* Background animation */
+@keyframes zoomBg {
+  0% { transform: scale(1.02); }
+  100% { transform: scale(1.08); }
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 2.3rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.15rem;
+    margin-bottom: 30px;
+  }
+  
+  .hero-crest {
+    width: 100px;
+    height: 100px;
+  }
+
+  .hero-btn-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .hero-btn {
+    width: 100%;
+  }
+  
+  .scroll-down-indicator {
+    bottom: 30px;
+  }
+}

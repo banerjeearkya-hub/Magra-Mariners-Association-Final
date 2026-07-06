@@ -1,0 +1,145 @@
+.events-section {
+  background-color: var(--bg-secondary);
+  position: relative;
+}
+
+.events-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+/* Timeline Overrides */
+.custom-timeline {
+  margin-top: 40px;
+}
+
+/* AntD internal items */
+.ant-timeline-item-tail {
+  border-left: 2px dashed rgba(255, 255, 255, 0.15) !important;
+}
+
+[data-theme="light"] .ant-timeline-item-tail {
+  border-left-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.timeline-dot-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.85rem;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 10;
+}
+
+.upcoming-dot {
+  background: var(--color-green);
+  border: 2px solid var(--color-accent);
+}
+
+.completed-dot {
+  background: var(--color-maroon);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.timeline-date-label {
+  font-family: var(--font-secondary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-theme="light"] .timeline-date-label {
+  color: var(--color-maroon);
+}
+
+.date-icon {
+  font-size: 0.9rem;
+}
+
+.timeline-card-wrapper {
+  margin-bottom: 25px;
+}
+
+.timeline-event-card {
+  padding: 25px;
+  border-radius: 12px;
+  text-align: left;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--glass-border);
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.timeline-event-card:hover {
+  transform: translateY(-3px);
+}
+
+.card-border-green {
+  border-left: 5px solid var(--color-green);
+}
+
+.card-border-green:hover {
+  border-color: rgba(19, 136, 68, 0.4);
+  border-left-color: var(--color-green);
+}
+
+.card-border-maroon {
+  border-left: 5px solid var(--color-maroon);
+}
+
+.card-border-maroon:hover {
+  border-color: rgba(123, 28, 36, 0.4);
+  border-left-color: var(--color-maroon);
+}
+
+.timeline-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 15px;
+}
+
+.event-title {
+  font-family: var(--font-secondary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.event-tag {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  border-radius: 4px;
+}
+
+.event-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Alternate Timeline labels adjustments for mobile styling */
+@media (max-width: 767px) {
+  .custom-timeline {
+    padding-left: 10px;
+  }
+  .timeline-date-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+  }
+  .ant-timeline-item-label {
+    display: none !important;
+  }
+  .ant-timeline-item-content {
+    margin-left: 20px !important;
+  }
+}

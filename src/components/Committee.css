@@ -1,0 +1,305 @@
+.committee-section {
+  background-color: var(--bg-secondary);
+  position: relative;
+}
+
+.committee-cards-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 50px;
+  justify-content: center;
+}
+
+.committee-card-wrapper {
+  height: 100%;
+}
+
+/* Gravity UI Card Styling */
+.committee-card {
+  padding: 45px 35px;
+  border-radius: 20px !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--glass-border) !important;
+  transition: border-color var(--transition-fast) !important;
+  background: var(--glass-bg) !important;
+  height: 100%;
+  position: relative;
+}
+
+.committee-card-wrapper:hover .committee-card {
+  border-color: rgba(26, 171, 86, 0.4) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+}
+
+/* Profile Image */
+.committee-image-container {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin-bottom: 30px;
+  z-index: 1;
+}
+
+.committee-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid rgba(255, 255, 255, 0.05);
+  transition: transform var(--transition-normal);
+}
+
+.committee-card-wrapper:hover .committee-img {
+  transform: scale(1.05);
+}
+
+.img-border-decor {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 2px dashed transparent;
+  pointer-events: none;
+  animation: spinSlow 15s linear infinite;
+}
+
+.maroon-decor {
+  border-color: var(--color-maroon);
+}
+
+.green-decor {
+  border-color: var(--color-green);
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Info */
+.committee-info {
+  flex-grow: 1;
+  margin-bottom: 30px;
+}
+
+.committee-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 15px;
+}
+
+.badge-maroon {
+  background-color: rgba(123, 28, 36, 0.15);
+  color: var(--color-accent);
+  border: 1px solid rgba(123, 28, 36, 0.4);
+}
+
+.badge-green {
+  background-color: rgba(19, 136, 68, 0.15);
+  color: var(--color-accent);
+  border: 1px solid rgba(19, 136, 68, 0.4);
+}
+
+.committee-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  letter-spacing: -0.01em;
+}
+
+.committee-bio {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* Social Icons */
+.committee-socials {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.social-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+}
+
+.social-icon-btn:hover {
+  transform: translateY(-3px);
+  color: white;
+}
+
+.facebook:hover {
+  background-color: #3b5998;
+  border-color: #3b5998;
+}
+
+.twitter:hover {
+  background-color: #1da1f2;
+  border-color: #1da1f2;
+}
+
+.linkedin:hover {
+  background-color: #0077b5;
+  border-color: #0077b5;
+}
+
+.email:hover {
+  background-color: var(--color-maroon);
+  border-color: var(--color-maroon);
+}
+
+/* Executive Members section */
+.executive-members-section {
+  margin-top: 80px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.executive-members-title {
+  font-family: var(--font-secondary);
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  text-align: center;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--color-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .executive-members-title {
+  background: linear-gradient(135deg, var(--text-primary) 30%, var(--color-maroon) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.executive-members-divider {
+  width: 50px;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  margin: 0 auto 40px auto;
+}
+
+.executive-members-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.executive-member-tag {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+/* Alternating borders for a premium supporters vibe */
+.executive-member-tag:nth-child(odd) {
+  border-left: 3px solid var(--color-green);
+}
+
+.executive-member-tag:nth-child(even) {
+  border-left: 3px solid var(--color-maroon);
+}
+
+/* Hover highlights */
+.executive-member-tag:hover {
+  transform: translate(3px, -3px);
+  border-color: rgba(26, 171, 86, 0.35);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.09) 100%);
+}
+
+.member-bullet {
+  font-size: 1.15rem;
+  transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-block;
+  color: var(--color-accent);
+}
+
+.executive-member-tag:hover .member-bullet {
+  transform: scale(1.2) rotate(360deg);
+}
+
+.member-name {
+  font-family: var(--font-primary);
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* Breakpoints for dynamic layouts */
+@media (max-width: 1200px) {
+  .committee-cards-container {
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 700px;
+    gap: 40px;
+  }
+  .executive-members-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .committee-cards-container {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+    gap: 30px;
+  }
+  .executive-members-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .executive-members-section {
+    margin-top: 60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .executive-members-grid {
+    grid-template-columns: 1fr;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+  .executive-members-title {
+    font-size: 1.6rem;
+  }
+}
