@@ -40,7 +40,11 @@ const Contact = ({ data }) => {
       }
     } catch (error) {
       hideLoading();
-      message.error('Failed to send message. Please try again later or email us directly.');
+      message.warning('Email server connection issue. Opening your local mail app to send the message...');
+      
+      // Fallback: Open mailto link with pre-filled content
+      const mailtoUrl = `mailto:${data.email}?subject=${encodeURIComponent(values.subject || 'Message from Mariners Supporter')}&body=${encodeURIComponent(`Name: ${values.name}\nEmail: ${values.email}\n\nMessage:\n${values.message}`)}`;
+      window.location.href = mailtoUrl;
     }
   };
 
@@ -86,7 +90,11 @@ const Contact = ({ data }) => {
               <div className="contact-icon maroon-bg"><FaEnvelope /></div>
               <div className="contact-text">
                 <h4>Email Address</h4>
-                <p>{data.email}</p>
+                <p>
+                  <a href={`mailto:${data.email}`} className="contact-email-link">
+                    {data.email}
+                  </a>
+                </p>
               </div>
             </div>
           </div>

@@ -129,3 +129,14 @@
     padding: 30px 20px;
   }
 }
+
+.contact-email-link {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+  text-decoration: none;
+}
+
+.contact-email-link:hover {
+  color: var(--color-green-light);
+  text-decoration: underline;
+}
