@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaFilePdf, FaDownload, FaExpand, FaTimes, FaExternalLinkAlt } from 'react-icons/fa';
+import { 
+  FaFilePdf, 
+  FaDownload, 
+  FaExpand, 
+  FaTimes, 
+  FaExternalLinkAlt,
+  FaChevronLeft,
+  FaChevronRight
+} from 'react-icons/fa';
 import './Brochure.css';
 
 // Import the brochure cover thumbnail
@@ -8,9 +16,12 @@ import brochureThumb from '../assets/brochure/page_1_img_1.jpg';
 
 const Brochure = ({ data }) => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = 11;
   const brochureUrl = `${import.meta.env.BASE_URL}MMA_Brochure.pdf`;
 
   const openViewer = () => {
+    setCurrentPage(1);
     setIsViewerOpen(true);
     document.body.style.overflow = 'hidden';
   };
@@ -19,6 +30,37 @@ const Brochure = ({ data }) => {
     setIsViewerOpen(false);
     document.body.style.overflow = 'auto';
   };
+
+  const nextPage = (e) => {
+    if (e) e.stopPropagation();
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const prevPage = (e) => {
+    if (e) e.stopPropagation();
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
+
+  // Keyboard navigation support
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!isViewerOpen) return;
+      if (e.key === 'ArrowRight') {
+        nextPage();
+      } else if (e.key === 'ArrowLeft') {
+        prevPage();
+      } else if (e.key === 'Escape') {
+        closeViewer();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isViewerOpen, currentPage]);
 
   return (
     <section id="brochure" className="brochure-section section-padding">
@@ -81,7 +123,7 @@ const Brochure = ({ data }) => {
         </motion.div>
       </div>
 
-      {/* FULLSCREEN PDF VIEWER MODAL */}
+      {/* FULLSCREEN BROCHURE SLIDESHOW VIEWER MODAL */}
       <AnimatePresence>
         {isViewerOpen && (
           <motion.div
@@ -92,30 +134,64 @@ const Brochure = ({ data }) => {
             onClick={closeViewer}
           >
             {/* Close Button */}
-            <button className="brochure-modal-close" onClick={closeViewer} aria-label="Close PDF Viewer">
+            <button className="brochure-modal-close" onClick={closeViewer} aria-label="Close Brochure Viewer">
               <FaTimes />
             </button>
 
-            {/* External Tab Option */}
-            <a href={brochureUrl} target="_blank" rel="noopener noreferrer" className="brochure-external-btn" onClick={(e) => e.stopPropagation()}>
-              <FaExternalLinkAlt /> Open in New Tab
-            </a>
-
-            {/* PDF Iframe Box */}
-            <motion.div
-              className="brochure-iframe-container"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 180 }}
+            {/* External PDF Link */}
+            <a 
+              href={brochureUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="brochure-external-btn" 
               onClick={(e) => e.stopPropagation()}
             >
-              <iframe 
-                src={`${brochureUrl}#view=FitH`} 
-                title="Magra Mariners Association Official Brochure Reader"
-                className="brochure-pdf-iframe"
-                frameBorder="0"
-              ></iframe>
+              <FaExternalLinkAlt /> Open Original PDF
+            </a>
+
+            {/* Slideshow Content Container */}
+            <motion.div
+              className="brochure-slideshow-container"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Navigation Arrow Left */}
+              {currentPage > 1 && (
+                <button className="brochure-nav-arrow left-arrow" onClick={prevPage} aria-label="Previous Page">
+                  <FaChevronLeft />
+                </button>
+              )}
+
+              {/* Page Image */}
+              <div className="brochure-page-wrapper">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentPage}
+                    src={`${import.meta.env.BASE_URL}brochure_pages/page_${currentPage}.jpg`}
+                    alt={`Brochure Page ${currentPage}`}
+                    className="brochure-page-img"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Arrow Right */}
+              {currentPage < totalPages && (
+                <button className="brochure-nav-arrow right-arrow" onClick={nextPage} aria-label="Next Page">
+                  <FaChevronRight />
+                </button>
+              )}
+
+              {/* Bottom Pagination Indicator */}
+              <div className="brochure-pagination">
+                <span>Page {currentPage} of {totalPages}</span>
+              </div>
             </motion.div>
           </motion.div>
         )}
