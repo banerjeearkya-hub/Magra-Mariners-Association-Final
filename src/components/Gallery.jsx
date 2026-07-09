@@ -18,10 +18,7 @@ const Gallery = ({ data }) => {
   const categories = [
     { key: 'all', label: 'All Memories' },
     { key: 'social-welfare', label: 'Social Welfare Activities' },
-    { key: 'mohun-bagan', label: 'Mohun Bagan & Fan Celebrations' },
-    { key: 'match-day', label: 'Match Day Memories' },
-    { key: 'afc-international', label: 'AFC International Memories' },
-    { key: 'football-development', label: 'Football Development' }
+    { key: 'blood-donation', label: 'Blood Donation Camp' }
   ];
 
   // Filtered list

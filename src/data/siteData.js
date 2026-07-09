@@ -167,14 +167,14 @@ export const siteData = {
       {
         id: "g_img_9",
         fileName: "gallery_img_9.jpg",
-        category: "match-day",
+        category: "blood-donation",
         title: "Match Day Memory",
         description: "Capturing the electric atmosphere and memories of our match day journey."
       },
       {
         id: "g_img_10",
         fileName: "gallery_img_10.jpg",
-        category: "match-day",
+        category: "blood-donation",
         title: "Match Day Memory",
         description: "Capturing the electric atmosphere and memories of our match day journey."
       },
@@ -216,7 +216,7 @@ export const siteData = {
       {
         id: "g_img_16",
         fileName: "gallery_img_16.jpg",
-        category: "match-day",
+        category: "blood-donation",
         title: "Match Day Memory",
         description: "Capturing the electric atmosphere and memories of our match day journey."
       },
@@ -244,7 +244,7 @@ export const siteData = {
       {
         id: "g_img_20",
         fileName: "gallery_img_20.jpg",
-        category: "match-day",
+        category: "blood-donation",
         title: "ISL Away match travel - Item 20",
         description: "Supporter travel organized for away matches across different venues."
       },
@@ -356,154 +356,154 @@ export const siteData = {
       {
         id: "g_img_36",
         fileName: "gallery_img_36.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 36",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_37",
         fileName: "gallery_img_37.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 37",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_38",
         fileName: "gallery_img_38.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 38",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_39",
         fileName: "gallery_img_39.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 39",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_40",
         fileName: "gallery_img_40.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 40",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_41",
         fileName: "gallery_img_41.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 41",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_42",
         fileName: "gallery_img_42.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 42",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_43",
         fileName: "gallery_img_43.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 43",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_44",
         fileName: "gallery_img_44.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 44",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_45",
         fileName: "gallery_img_45.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 45",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_46",
         fileName: "gallery_img_46.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 46",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_47",
         fileName: "gallery_img_47.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 47",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_48",
         fileName: "gallery_img_48.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 48",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_49",
         fileName: "gallery_img_49.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 49",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_50",
         fileName: "gallery_img_50.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 50",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_51",
         fileName: "gallery_img_51.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 51",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_52",
         fileName: "gallery_img_52.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 52",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_53",
         fileName: "gallery_img_53.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 53",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_54",
         fileName: "gallery_img_54.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 54",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_55",
         fileName: "gallery_img_55.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 55",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_56",
         fileName: "gallery_img_56.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 56",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
       {
         id: "g_img_57",
         fileName: "gallery_img_57.jpg",
-        category: "social-welfare",
+        category: "blood-donation",
         title: "Blood Donation Camp - Item 57",
         description: "Organizing voluntary Blood Donation Camps in Magra to support local blood banks and save lives."
       },
