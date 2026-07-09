@@ -90,7 +90,7 @@ export const siteData = {
       { name: "Arnab Mukherjee", position: "Social Media Head & Assistant Cashier" },
       { name: "Kartick Bhattacharjee", position: "Executive Member" },
       { name: "Biplob Ghosh", position: "Executive Member" },
-      { name: "Aditya Pandey", position: "Executive Member" },
+      { name: "Aditya Pandey", position: "Assistant Cashier" },
       { name: "Arup Kundu", position: "Executive Member" },
       { name: "Bablu Pal", position: "Executive Member" },
       { name: "Soumya Batyabal", position: "Executive Member" },

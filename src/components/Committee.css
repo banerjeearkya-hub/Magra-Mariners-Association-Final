@@ -279,14 +279,10 @@
   font-family: var(--font-primary);
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--color-green-light);
+  color: #ECE5D8; /* Classy, professional champagne cream highlight */
   letter-spacing: 0.03em;
   text-transform: uppercase;
-}
-
-/* Alternating colors for position text matching MB split colors */
-.executive-member-tag:nth-child(even) .member-position {
-  color: var(--color-maroon-light);
+  opacity: 0.85;
 }
 
 /* Breakpoints for dynamic layouts */
