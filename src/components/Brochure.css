@@ -1,0 +1,265 @@
+.brochure-section {
+  background-color: #070404; /* Dark background */
+  position: relative;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.brochure-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 4%;
+}
+
+.brochure-glass-card {
+  border-radius: 20px;
+  padding: 40px;
+  background: linear-gradient(135deg, rgba(107, 16, 36, 0.06) 0%, rgba(30, 215, 96, 0.03) 100%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
+}
+
+.brochure-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 45px;
+  align-items: center;
+}
+
+.brochure-preview-side {
+  display: flex;
+  justify-content: center;
+}
+
+.brochure-img-frame {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  transition: transform var(--transition-normal);
+}
+
+.brochure-img-frame:hover {
+  transform: scale(1.03) rotate(-1deg);
+}
+
+.brochure-cover-img {
+  width: 250px;
+  height: auto;
+  display: block;
+  object-fit: cover;
+}
+
+.brochure-overlay-tag {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: var(--color-maroon);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.pdf-tag-icon {
+  font-size: 0.85rem;
+}
+
+.brochure-badge-tag {
+  background: rgba(30, 215, 96, 0.1);
+  color: var(--color-green-light);
+  border: 1px solid rgba(30, 215, 96, 0.2);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-block;
+  margin-bottom: 15px;
+}
+
+.brochure-card-title {
+  font-family: var(--font-secondary);
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 15px;
+}
+
+.brochure-card-desc {
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+.brochure-bullets {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 35px;
+}
+
+.bullet-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.bullet-dot {
+  color: #DFBA73; /* Gold bullet */
+  font-size: 0.9rem;
+}
+
+.brochure-button-row {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.brochure-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+}
+
+.brochure-download-btn {
+  background-color: var(--color-green) !important;
+  color: white !important;
+}
+
+.brochure-download-btn:hover {
+  background-color: var(--color-green-light) !important;
+  transform: translateY(-2px);
+}
+
+.btn-icon-svg {
+  font-size: 0.9rem;
+}
+
+/* --- FULLSCREEN MODAL --- */
+.brochure-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(15, 10, 11, 0.96);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+}
+
+.brochure-modal-close {
+  position: absolute;
+  top: 30px;
+  right: 45px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 2.2rem;
+  cursor: pointer;
+  z-index: 2010;
+  transition: color var(--transition-fast);
+}
+
+.brochure-modal-close:hover {
+  color: var(--color-maroon-light);
+}
+
+.brochure-external-btn {
+  position: absolute;
+  top: 35px;
+  right: 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  z-index: 2010;
+  transition: all var(--transition-fast);
+}
+
+.brochure-external-btn:hover {
+  background: white;
+  color: black;
+}
+
+.brochure-iframe-container {
+  width: 96%;
+  height: 86vh;
+  max-width: 1300px;
+  background: #0f0a0b;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.8);
+}
+
+.brochure-pdf-iframe {
+  width: 100%;
+  height: 100%;
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
+@media (max-width: 992px) {
+  .brochure-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .brochure-preview-side {
+    order: -1;
+  }
+  .brochure-cover-img {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .brochure-glass-card {
+    padding: 25px;
+  }
+  .brochure-card-title {
+    font-size: 1.8rem;
+  }
+  .brochure-external-btn {
+    top: 20px;
+    right: 70px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+  .brochure-modal-close {
+    top: 15px;
+    right: 20px;
+    font-size: 1.8rem;
+  }
+  .brochure-button-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .brochure-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

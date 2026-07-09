@@ -19,6 +19,7 @@ import Hero from './components/Hero';
 import About from './components/About';
 import Committee from './components/Committee';
 import Gallery from './components/Gallery';
+import Brochure from './components/Brochure';
 import Events from './components/Events';
 import Statistics from './components/Statistics';
 import Contact from './components/Contact';
@@ -53,6 +54,7 @@ function App() {
     { label: "About", href: "#about" },
     { label: "Committee", href: "#committee" },
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "#gallery" }] : []),
+    { label: "Brochure", href: "#brochure" },
     { label: "Events", href: "#events" },
     { label: "Contact", href: "#contact" }
   ];
@@ -88,6 +90,9 @@ function App() {
               {siteData.gallery.images && siteData.gallery.images.length > 0 && (
                 <Gallery data={siteData.gallery} />
               )}
+              
+              {/* Brochure Section */}
+              <Brochure data={siteData.gallery} />
               
               {/* Events Timeline */}
               <Events data={siteData.events} />
