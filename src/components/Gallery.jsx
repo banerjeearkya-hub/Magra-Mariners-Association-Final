@@ -18,7 +18,8 @@ const Gallery = ({ data }) => {
   const categories = [
     { key: 'all', label: 'All Memories' },
     { key: 'social-welfare', label: 'Social Welfare Activities' },
-    { key: 'blood-donation', label: 'Blood Donation Camp' }
+    { key: 'blood-donation', label: 'Blood Donation Camp' },
+    { key: 'match-day', label: 'Match Day' }
   ];
 
   // Filtered list

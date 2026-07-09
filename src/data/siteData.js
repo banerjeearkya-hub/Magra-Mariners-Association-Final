@@ -510,70 +510,70 @@ export const siteData = {
       {
         id: "g_img_58",
         fileName: "gallery_img_58.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 58",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_59",
         fileName: "gallery_img_59.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 59",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_60",
         fileName: "gallery_img_60.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 60",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_61",
         fileName: "gallery_img_61.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 61",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_62",
         fileName: "gallery_img_62.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 62",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_63",
         fileName: "gallery_img_63.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 63",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_64",
         fileName: "gallery_img_64.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 64",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_65",
         fileName: "gallery_img_65.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 65",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_66",
         fileName: "gallery_img_66.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 66",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
       {
         id: "g_img_67",
         fileName: "gallery_img_67.jpg",
-        category: "afc-international",
+        category: "match-day",
         title: "AFC International Duty - Item 67",
         description: "Away travel to Basundhara Kings Arena in Dhaka, Bangladesh supporting our club in the AFC Cup."
       },
