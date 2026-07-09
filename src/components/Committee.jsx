@@ -60,7 +60,7 @@ const Committee = ({ data }) => {
           <h3 className="executive-members-title">Executive Members</h3>
           <div className="executive-members-divider"></div>
           <div className="executive-members-grid">
-            {data.executiveMembers.map((name, index) => (
+            {data.executiveMembers.map((member, index) => (
               <motion.div 
                 key={index}
                 className="executive-member-tag glassmorphism"
@@ -68,10 +68,13 @@ const Committee = ({ data }) => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: (index % 4) * 0.05 }}
-                whileHover={{ scale: 1.05, borderColor: 'rgba(245, 194, 66, 0.4)' }}
+                whileHover={{ scale: 1.05, borderColor: 'rgba(30, 215, 96, 0.4)' }}
               >
                 <span className="member-bullet">⚽</span>
-                <span className="member-name">{name}</span>
+                <div className="member-details">
+                  <span className="member-name">{member.name}</span>
+                  <span className="member-position">{member.position}</span>
+                </div>
               </motion.div>
             ))}
           </div>

@@ -56,24 +56,48 @@ export const siteData = {
           linkedin: "https://linkedin.com",
           email: "associationmagramariners@gmail.com"
         }
+      },
+      {
+        id: "vice_president",
+        name: "Tarashankar Ghosh",
+        position: "Vice President",
+        image: presidentImg,
+        bio: "Dedicated administrator overseeing organizational strategy and supporter coordination.",
+        socials: {
+          facebook: "https://facebook.com",
+          twitter: "https://twitter.com",
+          linkedin: "https://linkedin.com",
+          email: "associationmagramariners@gmail.com"
+        }
+      },
+      {
+        id: "assistant_secretary",
+        name: "Ayan Mukherjee",
+        position: "Assistant Secretary",
+        image: secretaryImg,
+        bio: "Active coordinator assisting in daily administrative operations and supporter outreach.",
+        socials: {
+          facebook: "https://facebook.com",
+          twitter: "https://twitter.com",
+          linkedin: "https://linkedin.com",
+          email: "associationmagramariners@gmail.com"
+        }
       }
     ],
     executiveMembers: [
-      "Indrajit Sinha",
-      "Arijit Ghosh",
-      "Kartick Bhattacharjee",
-      "Biplob Ghosh",
-      "Aditya Pandey",
-      "Arnab Mukherjee",
-      "Arup Kundu",
-      "Bablu Pal",
-      "Soumya Batyabal",
-      "Ayan Mukherjee",
-      "Raja Nath",
-      "Sayak Mitra",
-      "Shubham Neogi",
-      "Subhajit Das",
-      "Tarasankar Ghosh"
+      { name: "Arijit Ghosh", position: "Cashier" },
+      { name: "Indrajit Sinha", position: "Convenor" },
+      { name: "Arnab Mukherjee", position: "Social Media Head & Assistant Cashier" },
+      { name: "Kartick Bhattacharjee", position: "Executive Member" },
+      { name: "Biplob Ghosh", position: "Executive Member" },
+      { name: "Aditya Pandey", position: "Executive Member" },
+      { name: "Arup Kundu", position: "Executive Member" },
+      { name: "Bablu Pal", position: "Executive Member" },
+      { name: "Soumya Batyabal", position: "Executive Member" },
+      { name: "Raja Nath", position: "Executive Member" },
+      { name: "Sayak Mitra", position: "Executive Member" },
+      { name: "Shubham Neogi", position: "Executive Member" },
+      { name: "Subhajit Das", position: "Executive Member" }
     ]
   },
 

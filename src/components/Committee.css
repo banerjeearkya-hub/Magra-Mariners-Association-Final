@@ -259,12 +259,34 @@
   transform: scale(1.2) rotate(360deg);
 }
 
+.member-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  text-align: left;
+}
+
 .member-name {
   font-family: var(--font-primary);
   font-size: 0.98rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.02em;
+}
+
+.member-position {
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-green-light);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Alternating colors for position text matching MB split colors */
+.executive-member-tag:nth-child(even) .member-position {
+  color: var(--color-maroon-light);
 }
 
 /* Breakpoints for dynamic layouts */
