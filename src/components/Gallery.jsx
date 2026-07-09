@@ -117,7 +117,7 @@ const Gallery = ({ data }) => {
                 <div className="gallery-card glassmorphism">
                   <div className="gallery-img-container">
                     <img 
-                      src={image.src} 
+                      src={`${import.meta.env.BASE_URL}gallery/${image.fileName}`} 
                       alt={image.title} 
                       className="gallery-img"
                       loading="lazy" 
@@ -198,7 +198,7 @@ const Gallery = ({ data }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <img 
-                src={filteredImages[activeImageIndex].src} 
+                src={`${import.meta.env.BASE_URL}gallery/${filteredImages[activeImageIndex].fileName}`} 
                 alt={filteredImages[activeImageIndex].title} 
                 className="lightbox-img"
               />
