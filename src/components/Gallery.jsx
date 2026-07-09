@@ -4,34 +4,24 @@ import {
   FaChevronLeft, 
   FaChevronRight, 
   FaTimes, 
-  FaSearchPlus, 
-  FaFilePdf, 
-  FaDownload, 
-  FaExpand, 
-  FaExternalLinkAlt,
+  FaSearchPlus,
   FaAward,
   FaHistory
 } from 'react-icons/fa';
 import './Gallery.css';
 
-// Import a representative thumbnail for the brochure card
-import brochureThumb from '../assets/brochure/page_1_img_1.jpg';
-
 const Gallery = ({ data }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [isBrochureOpen, setIsBrochureOpen] = useState(false);
 
-  const brochureUrl = `${import.meta.env.BASE_URL}MMA_Brochure.pdf`;
-
-  // Filter categories
+  // New Categories requested by the user
   const categories = [
     { key: 'all', label: 'All Memories' },
-    { key: 'social-work', label: 'Social Work' },
-    { key: 'blood-donation', label: 'Blood Donation' },
-    { key: 'football', label: 'Football Events' },
-    { key: 'stadium-visits', label: 'Stadium & Away Visits' },
-    { key: 'mohun-bagan', label: 'Club Celebrations' }
+    { key: 'social-welfare', label: 'Social Welfare Activities' },
+    { key: 'mohun-bagan', label: 'Mohun Bagan & Fan Celebrations' },
+    { key: 'match-day', label: 'Match Day Memories' },
+    { key: 'afc-international', label: 'AFC International Memories' },
+    { key: 'football-development', label: 'Football Development' }
   ];
 
   // Filtered list
@@ -57,16 +47,6 @@ const Gallery = ({ data }) => {
   const showPrev = (e) => {
     e.stopPropagation();
     setActiveImageIndex((prevIndex) => (prevIndex - 1 + filteredImages.length) % filteredImages.length);
-  };
-
-  const openBrochureFullscreen = () => {
-    setIsBrochureOpen(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeBrochureFullscreen = () => {
-    setIsBrochureOpen(false);
-    document.body.style.overflow = 'auto';
   };
 
   // Timeline Decadal Journey Data
@@ -106,73 +86,6 @@ const Gallery = ({ data }) => {
       </div>
 
       <div className="gallery-container">
-        {/* BROCHURE INTEGRATION CARD */}
-        <motion.div 
-          className="brochure-card-container glassmorphism premium-border-maroon"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="brochure-grid">
-            <div className="brochure-left">
-              <div className="brochure-thumb-wrapper">
-                <img src={brochureThumb} alt="MMA Brochure Cover" className="brochure-thumb" />
-                <div className="brochure-badge">
-                  <FaFilePdf className="pdf-icon" />
-                  <span>Brochure</span>
-                </div>
-              </div>
-            </div>
-            <div className="brochure-right">
-              <span className="premium-accent-tag">Established 2014</span>
-              <h3 className="brochure-title">Official Association Brochure</h3>
-              <p className="brochure-desc">
-                Explore the official documentation of the Magra Mariners Association (Reg No. S0027331), affiliated with Mohun Bagan Athletic Club. Discover our decade-long journey, achievements, stadium away duties, and continuous social welfare services in Hooghly.
-              </p>
-              
-              <div className="brochure-features">
-                <div className="feature-item">
-                  <span className="feature-bullet">⚽</span>
-                  <span><strong>12th Man Journey:</strong> Supporting Mohun Bagan across India & Bangladesh.</span>
-                </div>
-                <div className="feature-item">
-                  <span className="feature-bullet">⚽</span>
-                  <span><strong>Social Responsibility:</strong> Organizing Blood Donation Camps and charity programs.</span>
-                </div>
-                <div className="feature-item">
-                  <span className="feature-bullet">⚽</span>
-                  <span><strong>Grassroots Football:</strong> Supporting orphanages and local tournaments.</span>
-                </div>
-              </div>
-
-              <div className="brochure-actions">
-                <a 
-                  href={brochureUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="btn btn-primary brochure-btn"
-                >
-                  <FaExternalLinkAlt className="btn-icon" /> View Online
-                </a>
-                <button 
-                  onClick={openBrochureFullscreen} 
-                  className="btn btn-sec brochure-btn"
-                >
-                  <FaExpand className="btn-icon" /> Full Screen Reader
-                </button>
-                <a 
-                  href={brochureUrl} 
-                  download="MMA_Official_Brochure.pdf" 
-                  className="btn brochure-download-btn"
-                >
-                  <FaDownload className="btn-icon" /> Download PDF
-                </a>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
         {/* GALLERY TABS & FILTERS */}
         <div className="gallery-filter-bar">
           {categories.map((cat) => (
@@ -252,36 +165,6 @@ const Gallery = ({ data }) => {
           </div>
         </div>
       </div>
-
-      {/* FULLSCREEN BROCHURE READER MODAL */}
-      <AnimatePresence>
-        {isBrochureOpen && (
-          <motion.div
-            className="lightbox-overlay pdf-viewer-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <button className="lightbox-close-btn" onClick={closeBrochureFullscreen} aria-label="Close reader">
-              <FaTimes />
-            </button>
-            <motion.div
-              className="pdf-viewer-content"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-            >
-              <iframe 
-                src={`${brochureUrl}#view=FitH`} 
-                title="Magra Mariners Association Official Brochure PDF Reader"
-                className="pdf-iframe"
-                frameBorder="0"
-              ></iframe>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* IMAGE LIGHTBOX MODAL */}
       <AnimatePresence>
