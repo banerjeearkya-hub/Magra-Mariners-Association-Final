@@ -124,8 +124,6 @@ const Gallery = ({ data }) => {
                     />
                     <div className="gallery-hover-overlay">
                       <FaSearchPlus className="zoom-icon" />
-                      <h3>{image.title}</h3>
-                      <p className="hover-category">{image.category.replace('-', ' ')}</p>
                     </div>
                   </div>
                 </div>

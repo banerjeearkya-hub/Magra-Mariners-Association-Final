@@ -293,13 +293,14 @@
 /* --- DECADAL TIMELINE DESIGN --- */
 .timeline-section {
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 60px;
+  padding-top: 80px;
+  margin-top: 60px;
   margin-bottom: 40px;
 }
 
 .timeline-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -329,84 +330,123 @@
 }
 
 .timeline-container {
-  max-width: 800px;
-  margin: 0 auto;
   position: relative;
-  padding-left: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 0;
+  display: flex;
+  flex-direction: column;
 }
 
+/* The vertical line in the center */
 .timeline-container::before {
   content: '';
   position: absolute;
+  left: 50%;
   top: 0;
   bottom: 0;
-  left: 39px;
-  width: 2px;
-  background: rgba(255, 255, 255, 0.05);
+  width: 3px;
+  background: linear-gradient(to bottom, var(--color-green) 0%, var(--color-maroon) 100%);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  opacity: 0.4;
 }
 
 .timeline-item {
   position: relative;
-  margin-bottom: 45px;
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 20px;
-  align-items: start;
+  width: 50%;
+  padding: 15px 45px;
+  box-sizing: border-box;
 }
 
+/* Odd items on the left */
+.timeline-item:nth-child(odd) {
+  left: 0;
+  text-align: right;
+}
+
+/* Even items on the right */
+.timeline-item:nth-child(even) {
+  left: 50%;
+  text-align: left;
+}
+
+/* Central Year Badge over the center line */
 .timeline-badge-year {
-  width: 50px;
-  height: 50px;
+  width: 54px;
+  height: 54px;
   border-radius: 50%;
-  background: #6B1024;
-  border: 2px solid rgba(255, 255, 255, 0.1);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  z-index: 2;
+  z-index: 10;
   position: absolute;
-  left: 15px;
-  top: 5px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  top: 30px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: 3px solid #0B0607;
 }
 
-.timeline-badge-icon {
-  font-size: 0.75rem;
-  color: #DFBA73;
-}
-
-.timeline-badge-year span {
-  font-size: 0.7rem;
-  font-weight: 800;
-  color: white;
-  line-height: 1.1;
+.timeline-item:nth-child(odd) .timeline-badge-year {
+  right: -27px;
+  background: linear-gradient(135deg, var(--color-green) 0%, #0d5c2e 100%);
 }
 
 .timeline-item:nth-child(even) .timeline-badge-year {
-  background: #138844;
+  left: -27px;
+  background: linear-gradient(135deg, var(--color-maroon) 0%, #4a0e13 100%);
 }
 
+.timeline-badge-icon {
+  font-size: 0.7rem;
+  color: #DFBA73;
+  margin-bottom: 2px;
+}
+
+.timeline-badge-year span {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: white;
+  line-height: 1;
+}
+
+/* Timeline Cards */
 .timeline-card {
-  padding: 24px 30px;
-  border-radius: 16px;
+  padding: 28px 32px;
+  border-radius: 20px;
   border: 1px solid var(--glass-border);
-  margin-left: 60px;
-  position: relative;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.01) 0%, rgba(255, 255, 255, 0.04) 100%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: all var(--transition-normal);
+  backdrop-filter: blur(12px);
 }
 
 .timeline-card h4 {
   font-family: var(--font-secondary);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: white;
   margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .timeline-card p {
   color: var(--text-secondary);
   font-size: 0.95rem;
-  line-height: 1.5;
+  line-height: 1.6;
+}
+
+/* Hover effects */
+.timeline-item:hover .timeline-card {
+  transform: translateY(-5px);
+  border-color: rgba(30, 215, 96, 0.4);
+  box-shadow: 0 12px 30px rgba(30, 215, 96, 0.15);
+}
+
+.timeline-item:nth-child(even):hover .timeline-card {
+  border-color: rgba(217, 26, 42, 0.4);
+  box-shadow: 0 12px 30px rgba(217, 26, 42, 0.15);
 }
 
 /* --- FULLSCREEN PDF READER MODAL --- */
@@ -577,11 +617,22 @@
     right: 25px;
     font-size: 1.8rem;
   }
-  .timeline-card {
-    padding: 18px 20px;
-    margin-left: 45px;
+  .timeline-container::before {
+    left: 20px;
+    transform: none;
+  }
+  .timeline-item {
+    width: 100%;
+    left: 0 !important;
+    padding-left: 45px;
+    padding-right: 0;
+    text-align: left !important;
   }
   .timeline-badge-year {
-    left: 10px;
+    left: -7px !important;
+    top: 25px;
+  }
+  .timeline-card {
+    padding: 20px 24px;
   }
 }
