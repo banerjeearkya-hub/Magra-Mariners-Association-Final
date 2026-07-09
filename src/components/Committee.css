@@ -278,11 +278,11 @@
 .member-position {
   font-family: var(--font-primary);
   font-size: 0.78rem;
-  font-weight: 500;
-  color: #ECE5D8; /* Classy, professional champagne cream highlight */
+  font-weight: 600;
+  color: #DFBA73; /* Classy, professional golden highlight */
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  opacity: 0.85;
+  opacity: 0.95;
 }
 
 /* Breakpoints for dynamic layouts */
