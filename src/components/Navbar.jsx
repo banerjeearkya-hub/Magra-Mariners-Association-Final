@@ -1,14 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { FaBars, FaTimes, FaSun, FaMoon } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaTimes, FaEllipsisV } from 'react-icons/fa';
 import logoImg from '../assets/logo.png';
 import './Navbar.css';
 
-const Navbar = ({ theme, toggleTheme, navLinks = [] }) => {
+const Navbar = ({ navLinks = [] }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const menuRef = useRef(null);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Track scroll position
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 50) {
@@ -24,9 +37,9 @@ const Navbar = ({ theme, toggleTheme, navLinks = [] }) => {
 
   return (
     <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} glassmorphism`}>
-      <div className="navbar-container">
+      <div className="navbar-container" ref={menuRef}>
         {/* Logo and Brand Name */}
-        <a href="#home" className="navbar-logo-container">
+        <a href="#home" className="navbar-logo-container" onClick={() => setIsOpen(false)}>
           <img src={logoImg} alt="MMA Logo" className="navbar-logo" />
           <div className="navbar-brand-text">
             <span className="navbar-brand-title">MAGRA MARINERS</span>
@@ -34,50 +47,33 @@ const Navbar = ({ theme, toggleTheme, navLinks = [] }) => {
           </div>
         </a>
 
-        {/* Desktop Menu */}
-        <ul className="navbar-links-desktop">
-          {navLinks.map((link, idx) => (
-            <li key={idx} className="navbar-item">
-              <a href={link.href} className="navbar-link">{link.label}</a>
-            </li>
-          ))}
-        </ul>
-
-        {/* Right side: Theme Toggle & Hamburger */}
+        {/* Right side: Three-dot menu button */}
         <div className="navbar-actions">
           <button 
-            onClick={toggleTheme} 
-            className="theme-toggle-btn"
-            aria-label="Toggle theme"
-          >
-            {theme === 'dark' ? <FaSun className="theme-icon sun" /> : <FaMoon className="theme-icon moon" />}
-          </button>
-          
-          <button 
             onClick={toggleMenu} 
-            className="hamburger-btn"
+            className={`threedot-btn ${isOpen ? 'active' : ''}`}
             aria-label="Toggle navigation menu"
           >
-            {isOpen ? <FaTimes /> : <FaBars />}
+            {isOpen ? <FaTimes /> : <FaEllipsisV />}
           </button>
+          
+          {/* Dropdown Menu Container */}
+          <div className={`threedot-dropdown ${isOpen ? 'dropdown-open' : ''} glassmorphism`}>
+            <ul className="dropdown-links">
+              {navLinks.map((link, idx) => (
+                <li key={idx} className="dropdown-item">
+                  <a 
+                    href={link.href} 
+                    className="dropdown-link"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      <div className={`navbar-drawer-mobile ${isOpen ? 'drawer-open' : ''} glassmorphism`}>
-        <ul className="navbar-links-mobile">
-          {navLinks.map((link, idx) => (
-            <li key={idx} className="navbar-item-mobile">
-              <a 
-                href={link.href} 
-                className="navbar-link-mobile"
-                onClick={() => setIsOpen(false)}
-              >
-                {link.label}
-              </a>
-            </li>
-          ))}
-        </ul>
       </div>
     </nav>
   );

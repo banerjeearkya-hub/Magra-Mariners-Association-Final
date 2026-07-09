@@ -28,14 +28,7 @@ import ScrollToTop from './components/ScrollToTop';
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState('dark'); // Default Dark theme
-
-  // Toggle Theme between dark and light
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    document.documentElement.setAttribute('data-theme', nextTheme);
-  };
+  const theme = 'dark';
 
   useEffect(() => {
     // Force set default dark attributes
@@ -70,7 +63,7 @@ function App() {
         {!loading && (
           <>
             {/* Sticky Navigation */}
-            <Navbar theme={theme} toggleTheme={toggleTheme} navLinks={navLinks} />
+            <Navbar navLinks={navLinks} />
             
             {/* Main Page Layout */}
             <main>
