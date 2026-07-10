@@ -1,6 +1,28 @@
 .committee-section {
   background-color: var(--bg-secondary);
   position: relative;
+  overflow: hidden;
+}
+
+.committee-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/hero_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.08; /* Subtle watermark */
+  z-index: 0;
+  pointer-events: none;
+}
+
+.committee-section > * {
+  position: relative;
+  z-index: 1;
 }
 
 .committee-cards-container {
