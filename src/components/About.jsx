@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FaBookmark, FaQuoteLeft, FaHistory } from 'react-icons/fa';
+import logoImg from '../assets/logo.png';
 import './About.css';
 
 const About = ({ data }) => {
@@ -39,7 +40,7 @@ const About = ({ data }) => {
             <h3>ESTD 2014</h3>
             <p>More than a decade of unwavering loyalty and supporter activities in Magra.</p>
             <div className="badge-logo-container">
-              <img src="/logo.png" alt="MMA" className="badge-logo" />
+              <img src={logoImg} alt="MMA" className="badge-logo" />
             </div>
           </div>
           
