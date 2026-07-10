@@ -1488,7 +1488,7 @@ export const siteData = {
     address: "MMA Clubhouse, Station Road, Magra, Hooghly, West Bengal, Pin - 712148",
     phone: "9475083599 / 8100328580 / 8961702684",
     email: "associationmagramariners@gmail.com",
-    formspreeId: "xvgowpzv",
+    formspreeId: "mpqgvkqj",
     googleMapEmbed: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14693.364426573887!2d88.3695279!3d22.97446545!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f893a749f1dbcb%3A0x673dbb108ff1e5cf!2sMogra%2C%20West%20Bengal!5e0!3m2!1sen!2sin!4v1719999999999!5m2!1sen!2sin"
   }
 };
