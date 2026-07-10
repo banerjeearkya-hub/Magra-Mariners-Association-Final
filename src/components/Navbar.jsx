@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaTimes, FaEllipsisV } from 'react-icons/fa';
+import { FaBars, FaTimes } from 'react-icons/fa';
 import logoImg from '../assets/logo.png';
 import './Navbar.css';
 
@@ -47,33 +47,42 @@ const Navbar = ({ navLinks = [] }) => {
           </div>
         </a>
 
-        {/* Right side: Three-dot menu button */}
-        <div className="navbar-actions">
+        {/* Desktop Menu: options are directly visible horizontally */}
+        <ul className="navbar-links-desktop">
+          {navLinks.map((link, idx) => (
+            <li key={idx} className="navbar-item">
+              <a href={link.href} className="navbar-link">{link.label}</a>
+            </li>
+          ))}
+        </ul>
+
+        {/* Mobile Menu Action (Hamburger Icon) */}
+        <div className="navbar-actions-mobile">
           <button 
             onClick={toggleMenu} 
-            className={`threedot-btn ${isOpen ? 'active' : ''}`}
+            className="hamburger-btn"
             aria-label="Toggle navigation menu"
           >
-            {isOpen ? <FaTimes /> : <FaEllipsisV />}
+            {isOpen ? <FaTimes /> : <FaBars />}
           </button>
-          
-          {/* Dropdown Menu Container */}
-          <div className={`threedot-dropdown ${isOpen ? 'dropdown-open' : ''} glassmorphism`}>
-            <ul className="dropdown-links">
-              {navLinks.map((link, idx) => (
-                <li key={idx} className="dropdown-item">
-                  <a 
-                    href={link.href} 
-                    className="dropdown-link"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
+      </div>
+
+      {/* Mobile Drawer */}
+      <div className={`navbar-drawer-mobile ${isOpen ? 'drawer-open' : ''} glassmorphism`}>
+        <ul className="navbar-links-mobile">
+          {navLinks.map((link, idx) => (
+            <li key={idx} className="navbar-item-mobile">
+              <a 
+                href={link.href} 
+                className="navbar-link-mobile"
+                onClick={() => setIsOpen(false)}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </nav>
   );
