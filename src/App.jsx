@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { ThemeProvider } from '@gravity-ui/uikit';
-
-// Styles
-import '@gravity-ui/uikit/styles/styles.css';
 import './styles/global.css';
 import './App.css';
 
@@ -53,8 +49,7 @@ function App() {
   ];
 
   return (
-    <ThemeProvider theme={theme}>
-      <div className="app-container">
+    <div className="app-container">
         {/* Entrance Loader Animation */}
         <AnimatePresence>
           {loading && <Loader />}
@@ -100,9 +95,8 @@ function App() {
             {/* Floating back-to-top widget */}
             <ScrollToTop />
           </>
-        )}
-      </div>
-    </ThemeProvider>
+      )}
+    </div>
   );
 }
 

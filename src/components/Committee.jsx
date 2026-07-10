@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card } from '@gravity-ui/uikit';
 import { FaFacebookF, FaTwitter, FaLinkedinIn, FaEnvelope } from 'react-icons/fa';
 import './Committee.css';
 
@@ -24,7 +23,7 @@ const Committee = ({ data }) => {
             className="committee-card-wrapper"
           >
             {/* Gravity UI Card with glassmorphism CSS class */}
-            <Card className="committee-card glassmorphism">
+            <div className="committee-card glassmorphism">
               {/* Title & Position */}
               <div className="committee-info">
                 <span className={`committee-badge ${idx % 2 === 0 ? 'badge-maroon' : 'badge-green'}`}>
@@ -49,7 +48,7 @@ const Committee = ({ data }) => {
                   <FaEnvelope />
                 </a>
               </div>
-            </Card>
+            </div>
           </motion.div>
         ))}
       </div>
