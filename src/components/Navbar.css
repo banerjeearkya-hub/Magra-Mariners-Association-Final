@@ -26,7 +26,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: relative;
 }
 
 /* Logo block */
@@ -75,18 +74,61 @@
   margin-top: 2px;
 }
 
-/* Actions and Three-dot Menu */
-.navbar-actions {
+/* Desktop Menu Links */
+.navbar-links-desktop {
   display: flex;
+  list-style: none;
+  gap: 30px;
   align-items: center;
-  position: relative;
+  margin: 0;
+  padding: 0;
 }
 
-.threedot-btn {
+.navbar-item {
+  display: inline-block;
+}
+
+.navbar-link {
+  font-family: var(--font-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  position: relative;
+  padding: 8px 0;
+}
+
+.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-maroon) 0%, var(--color-green) 100%);
+  transition: width var(--transition-fast);
+  border-radius: 1px;
+}
+
+.navbar-link:hover {
+  color: white;
+}
+
+.navbar-link:hover::after {
+  width: 100%;
+}
+
+/* Mobile Actions */
+.navbar-actions-mobile {
+  display: none;
+  align-items: center;
+}
+
+.hamburger-btn {
   background: transparent;
   border: none;
   color: white;
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   padding: 10px;
   cursor: pointer;
   display: flex;
@@ -96,80 +138,74 @@
   border-radius: 50%;
 }
 
-.threedot-btn:hover, .threedot-btn.active {
+.hamburger-btn:hover {
   color: var(--color-green-light);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 15px rgba(30, 215, 96, 0.2);
 }
 
-/* Three-dot Dropdown Card */
-.threedot-dropdown {
+/* Mobile Drawer */
+.navbar-drawer-mobile {
   position: absolute;
-  top: 60px;
-  right: 0;
-  width: 240px;
-  background: rgba(11, 6, 7, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 18px;
-  padding: 12px 0;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
-  z-index: 1010;
+  top: 80px;
+  left: 0;
+  width: 100%;
+  background: rgba(15, 10, 11, 0.98);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   backdrop-filter: blur(15px);
-  
-  /* Hidden states */
-  opacity: 0;
-  transform: translateY(-10px);
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
-              visibility 0.25s;
+  z-index: 999;
 }
 
-.navbar-scrolled .threedot-dropdown {
-  top: 50px;
+.navbar-scrolled ~ .navbar-drawer-mobile {
+  top: 70px;
 }
 
-.threedot-dropdown.dropdown-open {
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
-  pointer-events: auto;
+.navbar-drawer-mobile.drawer-open {
+  max-height: 400px;
 }
 
-.dropdown-links {
+.navbar-links-mobile {
   list-style: none;
+  padding: 20px 0;
   margin: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: 15px;
 }
 
-.dropdown-item {
+.navbar-item-mobile {
   width: 100%;
+  text-align: center;
 }
 
-.dropdown-link {
+.navbar-link-mobile {
   display: block;
   font-family: var(--font-secondary);
-  font-size: 0.95rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-secondary);
-  padding: 12px 24px;
+  padding: 10px 0;
   transition: all var(--transition-fast);
-  text-decoration: none;
-  text-align: right;
-  border-right: 3px solid transparent;
 }
 
-.dropdown-link:hover {
-  background: rgba(255, 255, 255, 0.03);
+.navbar-link-mobile:hover {
   color: var(--color-green-light);
-  border-right-color: var(--color-green-light);
-  padding-right: 28px;
+  background: rgba(255, 255, 255, 0.03);
 }
 
-/* Mobile responsive adjustments */
+/* Responsive queries */
+@media (max-width: 992px) {
+  .navbar-links-desktop {
+    display: none;
+  }
+  .navbar-actions-mobile {
+    display: flex;
+  }
+}
+
 @media (max-width: 576px) {
   .navbar {
     height: 70px;
@@ -190,14 +226,10 @@
     font-size: 0.65rem;
     letter-spacing: 0.2em;
   }
-  .threedot-dropdown {
-    width: 200px;
+  .navbar-drawer-mobile {
+    top: 70px;
   }
-  .dropdown-link {
-    padding: 10px 20px;
-    font-size: 0.9rem;
-  }
-  .dropdown-link:hover {
-    padding-right: 24px;
+  .navbar-scrolled ~ .navbar-drawer-mobile {
+    top: 65px;
   }
 }

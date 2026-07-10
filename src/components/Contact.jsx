@@ -18,33 +18,38 @@ const Contact = ({ data }) => {
           'Accept': 'application/json'
         },
         body: JSON.stringify({
-          name: values.name,
-          email: values.email,
-          subject: values.subject,
-          message: values.message
+          name: values.name.trim(),
+          email: values.email.trim(),
+          subject: values.subject.trim(),
+          message: values.message.trim()
         })
       });
       
+      const result = await response.json();
       hideLoading();
       
       if (response.ok) {
         message.success({
           content: 'Thank you for reaching out! Your message has been sent successfully.',
-          style: {
-            marginTop: '10vh',
-          },
+          style: { marginTop: '10vh' }
         });
         form.resetFields();
       } else {
-        throw new Error('Formspree response not ok');
+        // Extract exact error from Formspree response
+        const errorMsg = result.error || (result.errors && result.errors[0] && result.errors[0].message) || 'Unknown error';
+        message.error({
+          content: `Failed to send email: ${errorMsg}. Please ensure your Formspree Form ID is verified and active.`,
+          duration: 6,
+          style: { marginTop: '10vh' }
+        });
       }
     } catch (error) {
       hideLoading();
-      message.warning('Email server connection issue. Opening your local mail app to send the message...');
-      
-      // Fallback: Open mailto link with pre-filled content
-      const mailtoUrl = `mailto:${data.email}?subject=${encodeURIComponent(values.subject || 'Message from Mariners Supporter')}&body=${encodeURIComponent(`Name: ${values.name}\nEmail: ${values.email}\n\nMessage:\n${values.message}`)}`;
-      window.location.href = mailtoUrl;
+      message.error({
+        content: 'Network connection issue. Failed to send email. Please check your internet connection.',
+        duration: 5,
+        style: { marginTop: '10vh' }
+      });
     }
   };
 
