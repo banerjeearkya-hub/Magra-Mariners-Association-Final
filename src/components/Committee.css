@@ -15,7 +15,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.08; /* Subtle watermark */
+  opacity: 0.035; /* Extremely soft watermark */
   z-index: 0;
   pointer-events: none;
 }
