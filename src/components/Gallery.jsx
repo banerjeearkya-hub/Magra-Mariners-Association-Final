@@ -13,6 +13,7 @@ import './Gallery.css';
 const Gallery = ({ data }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [visibleCount, setVisibleCount] = useState(24);
 
   // New Categories requested by the user
   const categories = [
@@ -26,6 +27,13 @@ const Gallery = ({ data }) => {
   const filteredImages = data.images.filter(
     (img) => selectedCategory === 'all' || img.category === selectedCategory
   );
+
+  const visibleImages = filteredImages.slice(0, visibleCount);
+
+  const handleCategoryChange = (catKey) => {
+    setSelectedCategory(catKey);
+    setVisibleCount(24);
+  };
 
   const openLightbox = (index) => {
     setActiveImageIndex(index);
@@ -90,7 +98,7 @@ const Gallery = ({ data }) => {
             <button
               key={cat.key}
               className={`filter-tab ${selectedCategory === cat.key ? 'active-tab' : ''}`}
-              onClick={() => setSelectedCategory(cat.key)}
+              onClick={() => handleCategoryChange(cat.key)}
             >
               {cat.label}
             </button>
@@ -100,35 +108,49 @@ const Gallery = ({ data }) => {
         {/* GALLERY GRID */}
         <div className="gallery-grid">
           <AnimatePresence mode="popLayout">
-            {filteredImages.map((image, index) => (
-              <motion.div
-                key={image.id}
-                layout
-                className="gallery-item-wrapper"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: (index % 6) * 0.05 }}
-                onClick={() => openLightbox(index)}
-              >
-                <div className="gallery-card glassmorphism">
-                  <div className="gallery-img-container">
-                    <img 
-                      src={`${import.meta.env.BASE_URL}gallery/${image.fileName}`} 
-                      alt={image.title} 
-                      className="gallery-img"
-                      loading="lazy" 
-                    />
-                    <div className="gallery-hover-overlay">
-                      <FaSearchPlus className="zoom-icon" />
+            {visibleImages.map((image, index) => {
+              const actualIndex = filteredImages.findIndex(img => img.id === image.id);
+              return (
+                <motion.div
+                  key={image.id}
+                  layout
+                  className="gallery-item-wrapper"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: (index % 6) * 0.05 }}
+                  onClick={() => openLightbox(actualIndex)}
+                >
+                  <div className="gallery-card glassmorphism">
+                    <div className="gallery-img-container">
+                      <img 
+                        src={`${import.meta.env.BASE_URL}gallery/${image.fileName}`} 
+                        alt={image.title} 
+                        className="gallery-img"
+                        loading="lazy" 
+                      />
+                      <div className="gallery-hover-overlay">
+                        <FaSearchPlus className="zoom-icon" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
+
+        {visibleCount < filteredImages.length && (
+          <div className="load-more-container">
+            <button 
+              className="btn-primary load-more-btn"
+              onClick={() => setVisibleCount((prev) => prev + 24)}
+            >
+              Load More
+            </button>
+          </div>
+        )}
 
         {/* DECADAL JOURNEY TIMELINE */}
         <div className="timeline-section">
