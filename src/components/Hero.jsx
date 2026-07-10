@@ -55,7 +55,12 @@ const Hero = ({ data }) => {
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.8 }}
         >
-          <a href={data.ctaLink} className="btn-primary hero-btn">
+          <a 
+            href={data.ctaLink} 
+            className="btn-primary hero-btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <FaUsers /> {data.ctaText}
           </a>
           <a href={data.secondaryLink} className="btn-secondary hero-btn hero-btn-sec">

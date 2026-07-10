@@ -14,7 +14,7 @@ export const siteData = {
     subtitle: "United by Passion. Driven by Mariners.",
     bgImage: heroBgImg,
     ctaText: "Join Association",
-    ctaLink: "#contact",
+    ctaLink: "https://docs.google.com/forms/d/e/1FAIpQLSfXPSrKrwspz8O48yFohvD2SqNnFkUHTdCs3mIlhVU8pu0cYQ/viewform?usp=sharing&ouid=100073082722532687211",
     secondaryText: "Learn More",
     secondaryLink: "#about"
   },
