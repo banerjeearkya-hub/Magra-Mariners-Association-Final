@@ -1,0 +1,108 @@
+.social-follow-section {
+  background-color: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.social-follow-container {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.social-subtitle {
+  max-width: 600px;
+  margin: 15px auto 0 auto !important;
+}
+
+.social-buttons-grid {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.social-btn {
+  flex: 1;
+  max-width: 380px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 30px;
+  border-radius: 16px;
+  text-decoration: none !important;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--card-shadow);
+  transition: all var(--transition-normal);
+}
+
+.social-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: white;
+  flex-shrink: 0;
+  transition: transform var(--transition-fast);
+}
+
+.fb-icon {
+  background: linear-gradient(135deg, #1877F2 0%, #0C4E9B 100%);
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.35);
+}
+
+.ig-icon {
+  background: linear-gradient(135deg, #F09433 0%, #E6683C 25%, #DC2743 50%, #CC2366 75%, #BC1888 100%);
+  box-shadow: 0 4px 14px rgba(220, 39, 67, 0.35);
+}
+
+.social-btn-text {
+  text-align: left;
+}
+
+.social-btn-text h4 {
+  font-family: var(--font-secondary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.social-btn-text p {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* Hover States with distinct branding glows */
+.facebook-btn:hover {
+  border-color: rgba(24, 119, 242, 0.4);
+  box-shadow: 0 10px 25px rgba(24, 119, 242, 0.15);
+}
+
+.instagram-btn:hover {
+  border-color: rgba(220, 39, 67, 0.4);
+  box-shadow: 0 10px 25px rgba(220, 39, 67, 0.15);
+}
+
+.social-btn:hover .social-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .social-buttons-grid {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 0 15px;
+  }
+  .social-btn {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 24px;
+  }
+}

@@ -19,6 +19,7 @@ import Brochure from './components/Brochure';
 import Events from './components/Events';
 import Statistics from './components/Statistics';
 import Contact from './components/Contact';
+import SocialFollow from './components/SocialFollow';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 
@@ -87,6 +88,9 @@ function App() {
               
               {/* Contact Information & Form */}
               <Contact data={siteData.contact} />
+
+              {/* Social Media Follow Section */}
+              <SocialFollow />
             </main>
 
             {/* Footer */}

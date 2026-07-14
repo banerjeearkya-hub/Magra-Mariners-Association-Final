@@ -63,9 +63,6 @@ const Hero = ({ data }) => {
           >
             <FaUsers /> {data.ctaText}
           </a>
-          <a href={data.secondaryLink} className="btn-secondary hero-btn hero-btn-sec">
-            <FaInfoCircle /> {data.secondaryText}
-          </a>
         </motion.div>
       </div>
 

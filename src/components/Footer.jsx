@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaFacebookF, FaTwitter, FaInstagram, FaYoutube, FaHeart, FaChevronUp } from 'react-icons/fa';
+import { FaFacebookF, FaInstagram, FaHeart } from 'react-icons/fa';
 import './Footer.css';
 
 const Footer = ({ logo, navLinks = [] }) => {
@@ -26,10 +26,8 @@ const Footer = ({ logo, navLinks = [] }) => {
             Founded in 2014, Magra Mariners Association is the official voice and community of the passionate Mohun Bagan supporters in Magra, Hooghly.
           </p>
           <div className="footer-social-row">
-            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FaFacebookF /></a>
-            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><FaTwitter /></a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><FaInstagram /></a>
-            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube"><FaYoutube /></a>
+            <a href="https://www.facebook.com/share/163KJQmNVdA/" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><FaFacebookF /></a>
+            <a href="https://www.instagram.com/magramarinersassociation2014?igsh=aWRnb2h0MWdlemoz" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><FaInstagram /></a>
           </div>
         </div>
 
