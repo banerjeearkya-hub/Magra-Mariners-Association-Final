@@ -13,7 +13,7 @@ import './Gallery.css';
 const Gallery = ({ data }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [visibleCount, setVisibleCount] = useState(24);
+  const [visibleCount, setVisibleCount] = useState(16);
 
   // New Categories requested by the user
   const categories = [
@@ -32,7 +32,7 @@ const Gallery = ({ data }) => {
 
   const handleCategoryChange = (catKey) => {
     setSelectedCategory(catKey);
-    setVisibleCount(24);
+    setVisibleCount(16);
   };
 
   const openLightbox = (index) => {
@@ -145,7 +145,7 @@ const Gallery = ({ data }) => {
           <div className="load-more-container">
             <button 
               className="btn-primary load-more-btn"
-              onClick={() => setVisibleCount((prev) => prev + 24)}
+              onClick={() => setVisibleCount((prev) => prev + 16)}
             >
               Load More
             </button>
