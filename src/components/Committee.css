@@ -334,10 +334,16 @@
 }
 
 @media (max-width: 480px) {
+  .committee-cards-container {
+    padding: 0 15px;
+    width: 100%;
+    max-width: 100%;
+  }
   .executive-members-grid {
     grid-template-columns: 1fr;
-    max-width: 320px;
-    margin: 0 auto;
+    width: 100%;
+    max-width: 100%;
+    padding: 0 15px;
   }
   .executive-members-title {
     font-size: 1.6rem;

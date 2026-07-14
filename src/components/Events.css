@@ -188,6 +188,10 @@
     gap: 8px;
   }
   
+  .timeline-event-card {
+    padding: 18px 16px !important;
+  }
+  
   .event-title {
     font-size: 1.15rem;
     line-height: 1.35;

@@ -307,6 +307,18 @@
 }
 
 @media (max-width: 768px) {
+  .brochure-modal-header {
+    padding: 15px 20px;
+  }
+  
+  .brochure-modal-title {
+    font-size: 1.2rem;
+  }
+  
+  .brochure-modal-page-indicator {
+    font-size: 0.8rem;
+  }
+
   .brochure-glass-card {
     padding: 25px;
   }
@@ -364,5 +376,22 @@
     bottom: 18px;
     font-size: 0.8rem;
     padding: 4px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brochure-glass-card {
+    padding: 20px 15px !important;
+  }
+  .brochure-card-title {
+    font-size: 1.45rem !important;
+    line-height: 1.3 !important;
+  }
+  .brochure-slideshow-container {
+    padding: 50px 10px 50px 10px !important;
+    height: 60vh !important;
+  }
+  .brochure-page-img {
+    max-height: 45vh !important;
   }
 }

@@ -162,3 +162,15 @@
     order: 1;
   }
 }
+
+@media (max-width: 576px) {
+  .about-title {
+    font-size: 1.85rem;
+  }
+  .about-badge-card {
+    padding: 25px 20px;
+  }
+  .about-quote {
+    padding: 20px;
+  }
+}

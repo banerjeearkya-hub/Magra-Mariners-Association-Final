@@ -44,8 +44,12 @@
 
 @media (max-width: 576px) {
   .stats-container {
-    grid-template-columns: 1fr;
-    max-width: 320px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 0 15px;
+  }
+  .stat-card {
+    padding: 25px 15px !important;
   }
 }
 
