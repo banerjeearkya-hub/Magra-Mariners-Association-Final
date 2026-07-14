@@ -118,6 +118,14 @@
   width: 100%;
 }
 
+.active-link {
+  color: white !important;
+}
+
+.active-link::after {
+  width: 100% !important;
+}
+
 /* Mobile Actions */
 .navbar-actions-mobile {
   display: none;
@@ -194,6 +202,11 @@
 .navbar-link-mobile:hover {
   color: var(--color-green-light);
   background: rgba(255, 255, 255, 0.03);
+}
+
+.active-link-mobile {
+  color: var(--color-green-light) !important;
+  background: rgba(30, 215, 96, 0.05) !important;
 }
 
 /* Responsive queries */

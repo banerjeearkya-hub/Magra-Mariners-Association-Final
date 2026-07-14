@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { FaBars, FaTimes } from 'react-icons/fa';
 import logoImg from '../assets/logo.png';
 import './Navbar.css';
@@ -39,19 +40,24 @@ const Navbar = ({ navLinks = [] }) => {
     <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} glassmorphism`}>
       <div className="navbar-container" ref={menuRef}>
         {/* Logo and Brand Name */}
-        <a href="#home" className="navbar-logo-container" onClick={() => setIsOpen(false)}>
+        <Link to="/" className="navbar-logo-container" onClick={() => setIsOpen(false)}>
           <img src={logoImg} alt="MMA Logo" className="navbar-logo" />
           <div className="navbar-brand-text">
             <span className="navbar-brand-title">MAGRA MARINERS</span>
             <span className="navbar-brand-subtitle">ASSOCIATION</span>
           </div>
-        </a>
+        </Link>
 
         {/* Desktop Menu: options are directly visible horizontally */}
         <ul className="navbar-links-desktop">
           {navLinks.map((link, idx) => (
             <li key={idx} className="navbar-item">
-              <a href={link.href} className="navbar-link">{link.label}</a>
+              <NavLink 
+                to={link.href} 
+                className={({ isActive }) => `navbar-link ${isActive ? 'active-link' : ''}`}
+              >
+                {link.label}
+              </NavLink>
             </li>
           ))}
         </ul>
@@ -73,13 +79,13 @@ const Navbar = ({ navLinks = [] }) => {
         <ul className="navbar-links-mobile">
           {navLinks.map((link, idx) => (
             <li key={idx} className="navbar-item-mobile">
-              <a 
-                href={link.href} 
-                className="navbar-link-mobile"
+              <NavLink 
+                to={link.href} 
+                className={({ isActive }) => `navbar-link-mobile ${isActive ? 'active-link-mobile' : ''}`}
                 onClick={() => setIsOpen(false)}
               >
                 {link.label}
-              </a>
+              </NavLink>
             </li>
           ))}
         </ul>

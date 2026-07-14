@@ -1,13 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaFacebookF, FaInstagram, FaHeart } from 'react-icons/fa';
 import './Footer.css';
 
 const Footer = ({ logo, navLinks = [] }) => {
-  const currentYear = 2026; // Match copyright requirements in prompt
-
-  const handleScrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const currentYear = 2026;
 
   return (
     <footer className="footer-section">
@@ -15,13 +12,13 @@ const Footer = ({ logo, navLinks = [] }) => {
         
         {/* Logo & Slogan Column */}
         <div className="footer-column branding-col">
-          <div className="footer-branding" onClick={handleScrollToTop}>
+          <Link to="/" className="footer-branding">
             <img src={logo} alt="MMA Logo" className="footer-logo" />
             <div className="footer-brand-text">
               <h3>MAGRA MARINERS</h3>
               <p>ASSOCIATION</p>
             </div>
-          </div>
+          </Link>
           <p className="footer-slogan">
             Founded in 2014, Magra Mariners Association is the official voice and community of the passionate Mohun Bagan supporters in Magra, Hooghly.
           </p>
@@ -38,7 +35,7 @@ const Footer = ({ logo, navLinks = [] }) => {
           <ul className="footer-links-list">
             {navLinks.map((link, idx) => (
               <li key={idx}>
-                <a href={link.href}>{link.label}</a>
+                <Link to={link.href}>{link.label}</Link>
               </li>
             ))}
           </ul>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import './styles/global.css';
 import './App.css';
@@ -22,10 +23,10 @@ import Contact from './components/Contact';
 import SocialFollow from './components/SocialFollow';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
+import ScrollToTopRoute from './components/ScrollToTopRoute';
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const theme = 'dark';
 
   useEffect(() => {
     // Force set default dark attributes
@@ -40,65 +41,91 @@ function App() {
   }, []);
 
   const navLinks = [
-    { label: "Home", href: "#home" },
-    { label: "About", href: "#about" },
-    { label: "Committee", href: "#committee" },
-    ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "#gallery" }] : []),
-    { label: "Brochure", href: "#brochure" },
-    { label: "Events", href: "#events" },
-    { label: "Contact", href: "#contact" }
+    { label: "Home", href: "/" },
+    { label: "About", href: "/about" },
+    { label: "Committee", href: "/committee" },
+    ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
+    { label: "Brochure", href: "/brochure" },
+    { label: "Events", href: "/events" },
+    { label: "Contact", href: "/contact" }
   ];
 
   return (
     <div className="app-container">
-        {/* Entrance Loader Animation */}
-        <AnimatePresence>
-          {loading && <Loader />}
-        </AnimatePresence>
+      {/* Entrance Loader Animation */}
+      <AnimatePresence>
+        {loading && <Loader />}
+      </AnimatePresence>
 
-        {!loading && (
-          <>
-            {/* Sticky Navigation */}
-            <Navbar navLinks={navLinks} />
-            
-            {/* Main Page Layout */}
-            <main>
-              {/* Hero Banner */}
-              <Hero data={siteData.hero} />
-              
-              {/* About Section */}
-              <About data={siteData.about} />
-              
-              {/* Committee Section */}
-              <Committee data={siteData.committee} />
+      {!loading && (
+        <HashRouter>
+          {/* Reset window scroll position on route transitions */}
+          <ScrollToTopRoute />
 
-              {/* Statistics Counter */}
-              <Statistics data={siteData.statistics} />
-              
-              {/* Gallery Grid (conditional rendering) */}
+          {/* Sticky Navigation */}
+          <Navbar navLinks={navLinks} />
+          
+          {/* Main Page Layout */}
+          <main>
+            <Routes>
+              {/* Home Page Route */}
+              <Route path="/" element={
+                <>
+                  <Hero data={siteData.hero} />
+                  
+                  {/* Association Introduction */}
+                  <section className="about-section section-padding">
+                    <div className="section-header">
+                      <h2>Who We Are</h2>
+                      <p style={{ maxWidth: '750px', margin: '15px auto 0 auto', fontSize: '1.05rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
+                        Founded in 2014, Magra Mariners Association is the official voice and community of the passionate Mohun Bagan supporters in Magra, Hooghly. 
+                        As a registered society, we are united by our love for the green & maroon colors and are dedicated to promoting sports, arranging match day screenings, 
+                        conducting voluntary blood donation camps, and supporting social welfare activities in our region.
+                      </p>
+                    </div>
+                  </section>
+
+                  {/* Highlights statistics counter */}
+                  <Statistics data={siteData.statistics} />
+                </>
+              } />
+
+              {/* About Us Page Route */}
+              <Route path="/about" element={<About data={siteData.about} />} />
+
+              {/* Executive Committee Page Route */}
+              <Route path="/committee" element={<Committee data={siteData.committee} />} />
+
+              {/* Gallery Page Route */}
               {siteData.gallery.images && siteData.gallery.images.length > 0 && (
-                <Gallery data={siteData.gallery} />
+                <Route path="/gallery" element={<Gallery data={siteData.gallery} />} />
               )}
-              
-              {/* Brochure Section */}
-              <Brochure data={siteData.gallery} />
-              
-              {/* Events Timeline */}
-              <Events data={siteData.events} />
-              
-              {/* Contact Information & Form */}
-              <Contact data={siteData.contact} />
 
-              {/* Social Media Follow Section */}
-              <SocialFollow />
-            </main>
+              {/* Brochure Page Route */}
+              <Route path="/brochure" element={<Brochure data={siteData.gallery} />} />
 
-            {/* Footer */}
-            <Footer logo={logoImg} navLinks={navLinks} />
-            
-            {/* Floating back-to-top widget */}
-            <ScrollToTop />
-          </>
+              {/* Events Page Route */}
+              <Route path="/events" element={<Events data={siteData.events} />} />
+
+              {/* Contact Page Route */}
+              <Route path="/contact" element={
+                <>
+                  <Contact data={siteData.contact} />
+                  <SocialFollow />
+                </>
+              } />
+
+              {/* Fallback Wildcard Route */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+
+          {/* Footer */}
+          <Footer logo={logoImg} navLinks={navLinks} />
+          
+          {/* Floating back-to-top widget */}
+          <ScrollToTop />
+        </HashRouter>
       )}
     </div>
   );
