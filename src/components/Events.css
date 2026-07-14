@@ -64,6 +64,10 @@
   font-size: 0.9rem;
 }
 
+.mobile-date-badge {
+  display: none;
+}
+
 .timeline-card-wrapper {
   margin-bottom: 25px;
 }
@@ -129,17 +133,64 @@
 /* Alternate Timeline labels adjustments for mobile styling */
 @media (max-width: 767px) {
   .custom-timeline {
-    padding-left: 10px;
+    padding-left: 5px;
   }
-  .timeline-date-label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
-  }
+  
+  /* Hide the desktop label column */
   .ant-timeline-item-label {
     display: none !important;
   }
+  
+  /* Force the content area to span full width instead of 50% */
   .ant-timeline-item-content {
-    margin-left: 20px !important;
+    left: 0 !important;
+    width: auto !important;
+    margin-left: 35px !important;
+    padding-left: 0 !important;
+    position: relative !important;
+    text-align: left !important;
+  }
+  
+  /* Align tail (timeline line) and head (timeline dot) to the left side */
+  .ant-timeline-item-tail {
+    left: 15px !important;
+  }
+  
+  .ant-timeline-item-head {
+    left: 15px !important;
+  }
+  
+  /* Mobile Date Badge styling */
+  .mobile-date-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-secondary);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--color-accent);
+    margin-bottom: 12px;
+    background: rgba(30, 215, 96, 0.08);
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(30, 215, 96, 0.15);
+  }
+  
+  [data-theme="light"] .mobile-date-badge {
+    color: var(--color-maroon);
+    background: rgba(153, 15, 27, 0.06);
+    border-color: rgba(153, 15, 27, 0.15);
+  }
+  
+  .timeline-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .event-title {
+    font-size: 1.15rem;
+    line-height: 1.35;
+    word-break: break-word;
   }
 }

@@ -55,6 +55,11 @@ const Events = ({ data }) => {
                   transition={{ duration: 0.6, delay: index * 0.15 }}
                 >
                   <div className={`timeline-event-card glassmorphism ${isUpcoming ? 'card-border-green' : 'card-border-maroon'}`}>
+                    {/* Mobile Date Badge */}
+                    <div className="mobile-date-badge">
+                      <FaCalendarAlt className="date-icon" /> {item.date}
+                    </div>
+
                     <div className="timeline-card-header">
                       <h3 className="event-title">{item.title}</h3>
                       <Tag color={isUpcoming ? 'success' : 'default'} className="event-tag">
