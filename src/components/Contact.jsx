@@ -83,11 +83,40 @@ const Contact = ({ data }) => {
               </div>
             </div>
 
+            {/* Contact Person 1 */}
             <div className="contact-item">
               <div className="contact-icon green-bg"><FaPhoneAlt /></div>
               <div className="contact-text">
-                <h4>Phone Number</h4>
-                <p>{data.phone}</p>
+                <h4>Dr. Kunal Batyabal</h4>
+                <p className="contact-designation">General Secretary, Magra Mariners Association</p>
+                <p className="contact-phone-val">
+                  <a href="tel:9433477024" className="contact-clickable-phone">9433477024</a>
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Person 2 */}
+            <div className="contact-item">
+              <div className="contact-icon green-bg"><FaPhoneAlt /></div>
+              <div className="contact-text">
+                <h4>Arnab Mukherjee</h4>
+                <p className="contact-designation">Head of Digital Media & Communications</p>
+                <p className="contact-phone-val">
+                  <a href="tel:8100328580" className="contact-clickable-phone">8100328580</a>
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Person 3 */}
+            <div className="contact-item">
+              <div className="contact-icon green-bg"><FaPhoneAlt /></div>
+              <div className="contact-text">
+                <h4>Arkyajyoti Banerjee</h4>
+                <p className="contact-designation">Technical Support & Digital Operations Coordinator</p>
+                <p className="contact-description">Responsible for website management, technical assistance, and digital support.</p>
+                <p className="contact-phone-val">
+                  <a href="tel:9475083599" className="contact-clickable-phone">9475083599</a>
+                </p>
               </div>
             </div>
 

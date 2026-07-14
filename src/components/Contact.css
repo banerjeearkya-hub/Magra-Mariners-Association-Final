@@ -38,7 +38,7 @@
 .contact-item {
   display: flex;
   gap: 20px;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .contact-icon {
@@ -138,5 +138,39 @@
 
 .contact-email-link:hover {
   color: var(--color-green-light);
+  text-decoration: underline;
+}
+
+.contact-designation {
+  font-size: 0.85rem !important;
+  color: #DFBA73 !important;
+  font-weight: 600;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.contact-description {
+  font-size: 0.85rem !important;
+  color: var(--text-muted) !important;
+  font-style: italic;
+  margin-top: 4px;
+  margin-bottom: 5px;
+  line-height: 1.35;
+}
+
+.contact-phone-val {
+  margin-top: 4px;
+}
+
+.contact-clickable-phone {
+  color: var(--color-green-light);
+  font-weight: 700;
+  transition: color var(--transition-fast);
+}
+
+.contact-clickable-phone:hover {
+  color: white;
   text-decoration: underline;
 }
