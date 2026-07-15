@@ -21,6 +21,7 @@ import Events from './components/Events';
 import Statistics from './components/Statistics';
 import Contact from './components/Contact';
 import SocialFollow from './components/SocialFollow';
+import Club from './components/Club';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollToTopRoute from './components/ScrollToTopRoute';
@@ -42,6 +43,7 @@ function App() {
 
   const navLinks = [
     { label: "Home", href: "/" },
+    { label: "Club", href: "/club" },
     { label: "About", href: "/about" },
     { label: "Committee", href: "/committee" },
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
@@ -89,6 +91,9 @@ function App() {
                   <Statistics data={siteData.statistics} />
                 </>
               } />
+
+              {/* Club Page Route */}
+              <Route path="/club" element={<Club />} />
 
               {/* About Us Page Route */}
               <Route path="/about" element={<About data={siteData.about} />} />
