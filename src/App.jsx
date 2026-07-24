@@ -43,7 +43,6 @@ function App() {
 
   const navLinks = [
     { label: "Home", href: "/" },
-    { label: "Club", href: "/club" },
     { label: "About", href: "/about" },
     { label: "Committee", href: "/committee" },
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
@@ -75,18 +74,6 @@ function App() {
                 <>
                   <Hero data={siteData.hero} />
                   
-                  {/* Association Introduction */}
-                  <section className="about-section section-padding">
-                    <div className="section-header">
-                      <h2>Who We Are</h2>
-                      <p style={{ maxWidth: '750px', margin: '15px auto 0 auto', fontSize: '1.05rem', lineHeight: '1.7', color: 'var(--text-secondary)' }}>
-                        Founded in 2014, Magra Mariners Association is the official voice and community of the passionate Mohun Bagan supporters in Magra, Hooghly. 
-                        As a registered society, we are united by our love for the green & maroon colors and are dedicated to promoting sports, arranging match day screenings, 
-                        conducting voluntary blood donation camps, and supporting social welfare activities in our region.
-                      </p>
-                    </div>
-                  </section>
-
                   {/* Highlights statistics counter */}
                   <Statistics data={siteData.statistics} />
                 </>
