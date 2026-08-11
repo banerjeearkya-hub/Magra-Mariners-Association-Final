@@ -3,15 +3,15 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// Firebase Client Configuration
-// Supports environment variables (Vite prefix VITE_) with fallback configuration
+// Official Firebase Web Configuration for Magra Mariners Association
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForMagraMariners12345678",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyClr70HwiNOU6jz9E5532Z9B6Mme9uqMuU",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "magra-mariners-association.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "magra-mariners-association",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "magra-mariners-association.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "100000000000",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:100000000000:web:abcdef1234567890"
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "magra-mariners-association.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "245577627284",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:245577627284:web:4a925adbb623a3b03ea681",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-C4BJEBHLKC"
 };
 
 // Initialize Firebase App singleton
