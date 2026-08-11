@@ -28,6 +28,7 @@ import Club from './components/Club';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollToTopRoute from './components/ScrollToTopRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import OfficialLogin from './components/OfficialLogin';
 import OfficialDashboard from './components/OfficialDashboard';
 
@@ -127,20 +128,22 @@ function App() {
   ];
 
   return (
-    <AuthProvider>
-      <div className="app-container">
-        {/* Entrance Loader Animation */}
-        <AnimatePresence>
-          {loading && <Loader />}
-        </AnimatePresence>
+    <ErrorBoundary>
+      <AuthProvider>
+        <div className="app-container">
+          {/* Entrance Loader Animation */}
+          <AnimatePresence>
+            {loading && <Loader />}
+          </AnimatePresence>
 
-        {!loading && (
-          <HashRouter>
-            <AppLayout navLinks={navLinks} />
-          </HashRouter>
-        )}
-      </div>
-    </AuthProvider>
+          {!loading && (
+            <HashRouter>
+              <AppLayout navLinks={navLinks} />
+            </HashRouter>
+          )}
+        </div>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -23,32 +23,33 @@ const OfficialLogin = () => {
   const [error, setError] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [isResetting, setIsResetting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const { login, resetPassword, currentUser, isOfficial } = useAuth();
+  const { login, resetPassword, currentUser, isOfficial, authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // If already authenticated as official, redirect directly to dashboard
-  if (currentUser && isOfficial) {
-    navigate('/dashboard', { replace: true });
-    return null;
-  }
+  // If already authenticated as official, redirect safely after render
+  useEffect(() => {
+    if (!authLoading && currentUser && isOfficial) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [currentUser, isOfficial, authLoading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
     setResetMessage('');
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
-      console.error(err);
-      if (err.message.includes('Access Denied')) {
+      console.error('Official login error:', err);
+      if (err.message && err.message.includes('Access Denied')) {
         setError(err.message);
       } else if (err.code === 'auth/api-key-not-valid' || err.message?.includes('api-key-not-valid')) {
-        setError('Firebase API Key not configured yet. Please provide your Firebase project config from Firebase Console.');
+        setError('Firebase API configuration error. Please check your project settings.');
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
         setError('Invalid official credentials. Please check your email and password.');
       } else if (err.code === 'auth/too-many-requests') {
@@ -57,7 +58,7 @@ const OfficialLogin = () => {
         setError(err.message || 'Failed to authenticate. Please check your connection.');
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -70,21 +71,21 @@ const OfficialLogin = () => {
 
     setError('');
     setResetMessage('');
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       await resetPassword(email);
       setResetMessage(`Password reset link has been sent to ${email}. Check your inbox!`);
       setIsResetting(false);
     } catch (err) {
-      console.error(err);
-      if (err.message.includes('Access Denied')) {
+      console.error('Password reset error:', err);
+      if (err.message && err.message.includes('Access Denied')) {
         setError(err.message);
       } else {
-        setError('Failed to send password reset email. Ensure the email is registered.');
+        setError('Failed to send password reset email. Ensure the email is registered in Firebase.');
       }
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -96,9 +97,9 @@ const OfficialLogin = () => {
 
       <motion.div 
         className="login-card glassmorphism"
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
         {/* Top Header */}
         <div className="login-header">
@@ -192,9 +193,9 @@ const OfficialLogin = () => {
                 <button 
                   type="submit" 
                   className="btn-primary submit-login-btn"
-                  disabled={loading}
+                  disabled={submitting}
                 >
-                  <FaLock /> {loading ? 'Authenticating...' : 'Sign In as Official'}
+                  <FaLock /> {submitting ? 'Authenticating...' : 'Sign In as Official'}
                 </button>
 
                 <button 
@@ -210,9 +211,9 @@ const OfficialLogin = () => {
                 <button 
                   type="submit" 
                   className="btn-primary submit-login-btn"
-                  disabled={loading}
+                  disabled={submitting}
                 >
-                  {loading ? 'Sending Link...' : 'Send Password Reset Email'}
+                  {submitting ? 'Sending Link...' : 'Send Password Reset Email'}
                 </button>
 
                 <button 
@@ -228,7 +229,7 @@ const OfficialLogin = () => {
         </form>
 
         <div className="login-footer-info">
-          <p>Restricted to authorized officials only. Unauthorized access attempts are monitored and recorded.</p>
+          <p>Restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Arkya Banerjee</strong>, <strong>Arnab Mukherjee</strong>.</p>
         </div>
       </motion.div>
     </div>

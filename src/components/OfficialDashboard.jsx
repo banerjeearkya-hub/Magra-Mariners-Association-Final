@@ -43,7 +43,7 @@ import logoImg from '../assets/logo.png';
 import './OfficialDashboard.css';
 
 const OfficialDashboard = () => {
-  const { currentUser, isOfficial, officialName, logout } = useAuth();
+  const { currentUser, isOfficial, officialName, logout, authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Tab State: 'events' | 'gallery'
@@ -96,13 +96,6 @@ const OfficialDashboard = () => {
       timeoutPromise
     ]);
   };
-
-  // Enforce official authentication
-  useEffect(() => {
-    if (!currentUser || !isOfficial) {
-      navigate('/login', { replace: true });
-    }
-  }, [currentUser, isOfficial, navigate]);
 
   // Subscribe to real-time events from Firestore with safety timeout
   useEffect(() => {
@@ -413,6 +406,44 @@ const OfficialDashboard = () => {
   };
 
   const todayStr = getLocalTodayString();
+
+  // If authentication state is still resolving
+  if (authLoading) {
+    return (
+      <div className="official-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <FaUserShield style={{ fontSize: '3.5rem', color: 'var(--color-green-light)', marginBottom: '16px' }} />
+          <h3 style={{ fontFamily: 'var(--font-secondary)', fontSize: '1.4rem' }}>Verifying Official Authorization...</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Connecting to official portal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not logged in or not an authorized official
+  if (!currentUser || !isOfficial) {
+    return (
+      <div className="official-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '30px 20px' }}>
+        <div className="empty-dashboard-card glassmorphism" style={{ maxWidth: '520px', width: '100%', padding: '45px 30px' }}>
+          <div className="error-icon-wrapper" style={{ margin: '0 auto 20px auto' }}>
+            <FaUserShield />
+          </div>
+          <h3 style={{ fontFamily: 'var(--font-secondary)', fontSize: '1.5rem', marginBottom: '10px' }}>Official Access Required</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '25px' }}>
+            This section is restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Arkya Banerjee</strong>, <strong>Arnab Mukherjee</strong>.
+          </p>
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/login" className="btn-primary" style={{ padding: '12px 26px', borderRadius: '25px', textDecoration: 'none', fontWeight: '700' }}>
+              Sign In as Official
+            </Link>
+            <Link to="/" className="topbar-site-btn" style={{ padding: '12px 24px', borderRadius: '25px', textDecoration: 'none', fontWeight: '600' }}>
+              Return to Website
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="official-dashboard-wrapper">

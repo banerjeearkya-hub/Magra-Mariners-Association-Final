@@ -19,21 +19,41 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
 
-  // Monitor auth state changes persistently
+  // Monitor auth state changes with safety timeout
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-    });
+    let unsubscribe = () => {};
+    // Safety timeout: Never leave auth in loading state for more than 600ms
+    const timer = setTimeout(() => {
+      setAuthLoading(false);
+    }, 600);
 
-    return unsubscribe;
+    try {
+      unsubscribe = onAuthStateChanged(auth, (user) => {
+        clearTimeout(timer);
+        setCurrentUser(user);
+        setAuthLoading(false);
+      }, (err) => {
+        clearTimeout(timer);
+        console.warn('Firebase onAuthStateChanged notice:', err);
+        setAuthLoading(false);
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      console.warn('Firebase Auth initialization notice:', e);
+      setAuthLoading(false);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      unsubscribe();
+    };
   }, []);
 
   // Official Email/Password Login
   const login = async (email, password) => {
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = (email || '').toLowerCase().trim();
     
     // Check if email is in the authorized list before attempting sign-in
     if (!isAuthorizedOfficial(normalizedEmail)) {
@@ -48,17 +68,23 @@ export const AuthProvider = ({ children }) => {
       throw new Error('Access Denied: You do not have management permissions.');
     }
 
+    setCurrentUser(userCredential.user);
     return userCredential.user;
   };
 
   // Logout
   const logout = async () => {
-    return signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn('SignOut error:', e);
+    }
+    setCurrentUser(null);
   };
 
   // Forgot Password / Password Reset
   const resetPassword = async (email) => {
-    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedEmail = (email || '').toLowerCase().trim();
     if (!isAuthorizedOfficial(normalizedEmail)) {
       throw new Error('Access Denied: Password reset is only available for authorized official emails.');
     }
@@ -75,12 +101,15 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     resetPassword,
-    loading
+    authLoading,
+    loading: authLoading
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
+
+export default AuthContext;
