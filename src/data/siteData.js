@@ -1467,18 +1467,12 @@ export const siteData = {
       },
       {
         id: "2",
-        title: "Mohun Bagan Foundation Day Fan Meet",
-        date: "2026-08-10",
-        description: "Celebrating Mohun Bagan Foundation Day with club flag hoisting and community gathering."
-      },
-      {
-        id: "3",
         title: "Flag Hosting",
         date: "2026-08-15",
         description: "Annual Independence Day flag hosting ceremony to celebrate the national spirit with fellow Mariners."
       },
       {
-        id: "4",
+        id: "3",
         title: "Annual Voluntary Blood Donation Camp",
         date: "2026-10-04",
         description: "Annual community blood donation initiative held at the MMA Clubhouse in partnership with local blood banks."
