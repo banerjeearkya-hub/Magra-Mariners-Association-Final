@@ -39,6 +39,7 @@ import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../firebase/config';
 import { getLocalTodayString, formatDisplayDate, normalizeDateStr } from './Events';
 import SafeImage from './SafeImage';
+import { compressImage } from '../utils/imageCompressor';
 import logoImg from '../assets/logo.png';
 import './OfficialDashboard.css';
 
@@ -220,14 +221,15 @@ const OfficialDashboard = () => {
 
       // Upload new poster image if selected
       if (eventFile) {
-        const fileExt = eventFile.name.split('.').pop();
+        const compressedPoster = await compressImage(eventFile, 1920, 1920, 0.85);
+        const fileExt = compressedPoster.name.split('.').pop();
         const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const storageRef = ref(storage, fileName);
         
         const uploadResult = await withTimeout(
-          uploadBytes(storageRef, eventFile),
-          10000,
-          'Firebase Storage upload timed out. Ensure Firebase Storage is enabled in Firebase Console.'
+          uploadBytes(storageRef, compressedPoster),
+          45000,
+          'Firebase Storage upload timed out. Please check your internet connection and verify Storage is enabled in Firebase Console.'
         );
         imageUrl = await getDownloadURL(uploadResult.ref);
         storagePath = fileName;
@@ -257,7 +259,7 @@ const OfficialDashboard = () => {
         const eventDocRef = doc(db, 'events', editingEvent.id);
         await withTimeout(
           updateDoc(eventDocRef, eventPayload),
-          8000,
+          15000,
           'Unable to reach Firestore database. Please verify Firestore Database is created in Firebase Console.'
         );
         showAlert('success', `Event "${eventForm.title}" updated successfully!`);
@@ -267,7 +269,7 @@ const OfficialDashboard = () => {
         eventPayload.createdAt = serverTimestamp();
         await withTimeout(
           addDoc(collection(db, 'events'), eventPayload),
-          8000,
+          15000,
           'Unable to reach Firestore database. Please make sure Firestore Database is created and active in your Firebase Console (Build > Firestore Database > Create Database).'
         );
         showAlert('success', `Event "${eventForm.title}" added successfully!`);
@@ -276,8 +278,8 @@ const OfficialDashboard = () => {
       setEventModalOpen(false);
     } catch (err) {
       console.error(err);
-      const errMsg = err.message.includes('permission-denied')
-        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
+      const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
+        ? 'Permission Denied: Please publish the Firebase Storage & Firestore Security Rules in Firebase Console.'
         : err.message;
       setModalError(errMsg);
       showAlert('error', `Failed to save event: ${errMsg}`);
@@ -321,14 +323,16 @@ const OfficialDashboard = () => {
 
     try {
       for (const file of Array.from(galleryFiles)) {
-        const fileExt = file.name.split('.').pop();
+        // Compress and optimize image before upload for speed
+        const compressedFile = await compressImage(file, 1920, 1920, 0.85);
+        const fileExt = compressedFile.name.split('.').pop();
         const storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const storageRef = ref(storage, storagePath);
 
         const uploadResult = await withTimeout(
-          uploadBytes(storageRef, file),
-          12000,
-          'Firebase Storage upload timed out. Ensure Firebase Storage is enabled in Firebase Console.'
+          uploadBytes(storageRef, compressedFile),
+          45000,
+          'Firebase Storage upload timed out. Please ensure Firebase Storage is enabled in Firebase Console (Build > Storage > Get Started).'
         );
         const imageUrl = await getDownloadURL(uploadResult.ref);
 
@@ -340,7 +344,7 @@ const OfficialDashboard = () => {
             uploadedBy: currentUser.email,
             uploadedAt: serverTimestamp()
           }),
-          8000,
+          15000,
           'Failed to record photo in Firestore. Ensure Firestore Database is created in Firebase Console.'
         );
 
@@ -352,7 +356,10 @@ const OfficialDashboard = () => {
       setGalleryCaption('');
     } catch (err) {
       console.error(err);
-      showAlert('error', `Failed to upload photos: ${err.message}`);
+      const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
+        ? 'Permission Denied: Please publish the Firebase Storage Security Rules in Firebase Console.'
+        : err.message;
+      showAlert('error', `Failed to upload photos: ${errMsg}`);
     } finally {
       setGalleryUploading(false);
     }
