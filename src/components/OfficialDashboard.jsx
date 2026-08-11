@@ -39,7 +39,7 @@ import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../firebase/config';
 import { getLocalTodayString, formatDisplayDate, normalizeDateStr } from './Events';
 import SafeImage from './SafeImage';
-import { compressImage } from '../utils/imageCompressor';
+import { compressImage, compressImageToBase64 } from '../utils/imageCompressor';
 import logoImg from '../assets/logo.png';
 import './OfficialDashboard.css';
 
@@ -221,26 +221,33 @@ const OfficialDashboard = () => {
 
       // Upload new poster image if selected
       if (eventFile) {
-        const compressedPoster = await compressImage(eventFile, 1920, 1920, 0.85);
-        const fileExt = compressedPoster.name.split('.').pop();
-        const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-        const storageRef = ref(storage, fileName);
-        
-        const uploadResult = await withTimeout(
-          uploadBytes(storageRef, compressedPoster),
-          45000,
-          'Firebase Storage upload timed out. Please check your internet connection and verify Storage is enabled in Firebase Console.'
-        );
-        imageUrl = await getDownloadURL(uploadResult.ref);
-        storagePath = fileName;
+        try {
+          const compressedPoster = await compressImage(eventFile, 1920, 1920, 0.85);
+          const fileExt = compressedPoster.name.split('.').pop();
+          const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+          const storageRef = ref(storage, fileName);
+          
+          const uploadResult = await withTimeout(
+            uploadBytes(storageRef, compressedPoster),
+            6000,
+            'Storage unavailable'
+          );
+          imageUrl = await getDownloadURL(uploadResult.ref);
+          storagePath = fileName;
 
-        // Delete old poster if updating
-        if (editingEvent?.storagePath) {
-          try {
-            await deleteObject(ref(storage, editingEvent.storagePath));
-          } catch (delErr) {
-            console.warn('Could not remove previous poster:', delErr);
+          // Delete old poster if updating
+          if (editingEvent?.storagePath) {
+            try {
+              await deleteObject(ref(storage, editingEvent.storagePath));
+            } catch (delErr) {
+              console.warn('Could not remove previous poster:', delErr);
+            }
           }
+        } catch (storageErr) {
+          // Fallback to storing compressed Base64 image directly in Firestore (100% Free, no Blaze needed)
+          console.info('Saving event poster directly to Firestore database:', storageErr);
+          imageUrl = await compressImageToBase64(eventFile, 1200, 1200, 0.75);
+          storagePath = '';
         }
       }
 
@@ -279,7 +286,7 @@ const OfficialDashboard = () => {
     } catch (err) {
       console.error(err);
       const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
-        ? 'Permission Denied: Please publish the Firebase Storage & Firestore Security Rules in Firebase Console.'
+        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
         : err.message;
       setModalError(errMsg);
       showAlert('error', `Failed to save event: ${errMsg}`);
@@ -323,18 +330,28 @@ const OfficialDashboard = () => {
 
     try {
       for (const file of Array.from(galleryFiles)) {
-        // Compress and optimize image before upload for speed
-        const compressedFile = await compressImage(file, 1920, 1920, 0.85);
-        const fileExt = compressedFile.name.split('.').pop();
-        const storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-        const storageRef = ref(storage, storagePath);
+        let imageUrl = '';
+        let storagePath = '';
 
-        const uploadResult = await withTimeout(
-          uploadBytes(storageRef, compressedFile),
-          45000,
-          'Firebase Storage upload timed out. Please ensure Firebase Storage is enabled in Firebase Console (Build > Storage > Get Started).'
-        );
-        const imageUrl = await getDownloadURL(uploadResult.ref);
+        try {
+          // Attempt Storage upload
+          const compressedFile = await compressImage(file, 1920, 1920, 0.85);
+          const fileExt = compressedFile.name.split('.').pop();
+          storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+          const storageRef = ref(storage, storagePath);
+
+          const uploadResult = await withTimeout(
+            uploadBytes(storageRef, compressedFile),
+            6000,
+            'Storage unavailable'
+          );
+          imageUrl = await getDownloadURL(uploadResult.ref);
+        } catch (storageErr) {
+          // Fallback to storing compressed Base64 photo directly in Firestore (100% Free Spark Plan)
+          console.info('Saving gallery photo directly to Cloud Firestore:', storageErr);
+          imageUrl = await compressImageToBase64(file, 1200, 1200, 0.75);
+          storagePath = '';
+        }
 
         await withTimeout(
           addDoc(collection(db, 'gallery'), {
@@ -345,7 +362,7 @@ const OfficialDashboard = () => {
             uploadedAt: serverTimestamp()
           }),
           15000,
-          'Failed to record photo in Firestore. Ensure Firestore Database is created in Firebase Console.'
+          'Failed to record photo in Firestore. Ensure Firestore Database is active in Firebase Console.'
         );
 
         successCount++;
@@ -357,7 +374,7 @@ const OfficialDashboard = () => {
     } catch (err) {
       console.error(err);
       const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
-        ? 'Permission Denied: Please publish the Firebase Storage Security Rules in Firebase Console.'
+        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
         : err.message;
       showAlert('error', `Failed to upload photos: ${errMsg}`);
     } finally {
