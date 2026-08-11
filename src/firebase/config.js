@@ -22,11 +22,30 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Map of Exactly 3 Authorized Officials
+// Role Definitions
+export const ROLES = {
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  ADMIN: 'ADMIN',
+  STAFF: 'STAFF'
+};
+
+// Map of Authorized Officials with their roles and names
 export const AUTHORIZED_OFFICIALS = {
-  'sm429113@gmail.com': 'Soumyadeep Modak',
-  'ghostygamer47@gmail.com': 'Subhankar Banerjee',
-  'arnabinsky@gmail.com': 'Arnab Mukherjee'
+  'sm429113@gmail.com': {
+    name: 'Soumyadeep Modak',
+    role: ROLES.SUPER_ADMIN,
+    title: 'Founder & Super Admin'
+  },
+  'ghostygamer47@gmail.com': {
+    name: 'Subhankar Banerjee',
+    role: ROLES.SUPER_ADMIN,
+    title: 'General Secretary & Super Admin'
+  },
+  'arnabinsky@gmail.com': {
+    name: 'Arnab Mukherjee',
+    role: ROLES.ADMIN,
+    title: 'Executive Admin'
+  }
 };
 
 // Helper to verify if an email belongs to an authorized official
@@ -38,7 +57,15 @@ export const isAuthorizedOfficial = (email) => {
 // Helper to get official's display name
 export const getOfficialName = (email) => {
   if (!email || typeof email !== 'string') return 'Official';
-  return AUTHORIZED_OFFICIALS[email.toLowerCase().trim()] || 'Official';
+  const official = AUTHORIZED_OFFICIALS[email.toLowerCase().trim()];
+  return official?.name || official || 'Official';
+};
+
+// Helper to get official's role
+export const getOfficialRole = (email) => {
+  if (!email || typeof email !== 'string') return ROLES.STAFF;
+  const official = AUTHORIZED_OFFICIALS[email.toLowerCase().trim()];
+  return official?.role || ROLES.ADMIN;
 };
 
 export default app;

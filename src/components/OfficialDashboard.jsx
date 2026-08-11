@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -8,9 +8,11 @@ import {
   updateDoc, 
   deleteDoc, 
   doc, 
-  serverTimestamp,
-  query,
-  orderBy 
+  serverTimestamp, 
+  query, 
+  orderBy,
+  limit,
+  setDoc
 } from 'firebase/firestore';
 import { 
   ref, 
@@ -33,30 +35,61 @@ import {
   FaTimes,
   FaHourglassHalf,
   FaFire,
-  FaImage
+  FaImage,
+  FaClipboardList,
+  FaHistory,
+  FaUsersCog,
+  FaSearch,
+  FaFilter,
+  FaEye,
+  FaChevronLeft,
+  FaChevronRight,
+  FaLayerGroup,
+  FaDesktop,
+  FaUserCheck,
+  FaClock
 } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
-import { db, storage } from '../firebase/config';
+import { db, storage, ROLES, AUTHORIZED_OFFICIALS } from '../firebase/config';
 import { getLocalTodayString, formatDisplayDate, normalizeDateStr } from './Events';
 import SafeImage from './SafeImage';
 import { compressImage, compressImageToBase64 } from '../utils/imageCompressor';
+import { logActivity } from '../services/activityLogger';
+import ActivityDetailsModal from './ActivityDetailsModal';
 import logoImg from '../assets/logo.png';
 import './OfficialDashboard.css';
 
 const OfficialDashboard = () => {
-  const { currentUser, isOfficial, officialName, logout, authLoading } = useAuth();
+  const { 
+    currentUser, 
+    isOfficial, 
+    officialName, 
+    userRole, 
+    isSuperAdmin, 
+    logout, 
+    authLoading 
+  } = useAuth();
+  
   const navigate = useNavigate();
 
-  // Tab State: 'events' | 'gallery'
+  // Navigation Tabs: 'events' | 'gallery' | 'activity' | 'logins' | 'users'
   const [activeTab, setActiveTab] = useState('events');
 
-  // Events & Gallery State
+  // Real-time Data States
   const [events, setEvents] = useState([]);
   const [galleryItems, setGalleryItems] = useState([]);
+  const [activityLogs, setActivityLogs] = useState([]);
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [adminUsers, setAdminUsers] = useState([]);
+
+  // Loading States
   const [loadingEvents, setLoadingEvents] = useState(true);
   const [loadingGallery, setLoadingGallery] = useState(true);
+  const [loadingLogs, setLoadingLogs] = useState(true);
+  const [loadingLogins, setLoadingLogins] = useState(true);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
-  // Modal States
+  // Event Modal States
   const [eventModalOpen, setEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [eventForm, setEventForm] = useState({ title: '', date: '', description: '' });
@@ -72,6 +105,23 @@ const OfficialDashboard = () => {
   // Edit Caption State
   const [editingPhoto, setEditingPhoto] = useState(null);
   const [photoCaptionForm, setPhotoCaptionForm] = useState('');
+
+  // User Management Modal State
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [userForm, setUserForm] = useState({ name: '', email: '', role: ROLES.ADMIN, status: 'ACTIVE' });
+  const [userSaving, setUserSaving] = useState(false);
+
+  // Activity Details Modal State
+  const [selectedLog, setSelectedLog] = useState(null);
+
+  // Activity Log Filter & Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterAction, setFilterAction] = useState('ALL');
+  const [filterSection, setFilterSection] = useState('ALL');
+  const [filterDateRange, setFilterDateRange] = useState('ALL'); // 'ALL' | 'TODAY' | 'WEEK' | 'MONTH'
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(15);
 
   // Notification / Alert Message
   const [alert, setAlert] = useState(null);
@@ -98,14 +148,10 @@ const OfficialDashboard = () => {
     ]);
   };
 
-  // Subscribe to real-time events from Firestore with safety timeout
+  // 1. Subscribe to Events
   useEffect(() => {
     if (!currentUser || !isOfficial) return;
-
-    // Safety timeout: Never hang in loading state for more than 1.8 seconds
-    const timeout = setTimeout(() => {
-      setLoadingEvents(false);
-    }, 1800);
+    const timeout = setTimeout(() => setLoadingEvents(false), 1800);
 
     let unsubscribe = () => {};
     try {
@@ -114,37 +160,25 @@ const OfficialDashboard = () => {
 
       unsubscribe = onSnapshot(q, (snapshot) => {
         clearTimeout(timeout);
-        const items = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setEvents(items);
         setLoadingEvents(false);
       }, (err) => {
         clearTimeout(timeout);
-        console.warn('Firestore events listener notice:', err);
+        console.warn('Firestore events notice:', err);
         setLoadingEvents(false);
       });
     } catch (e) {
       clearTimeout(timeout);
-      console.warn('Firestore events init error:', e);
       setLoadingEvents(false);
     }
-
-    return () => {
-      clearTimeout(timeout);
-      unsubscribe();
-    };
+    return () => { clearTimeout(timeout); unsubscribe(); };
   }, [currentUser, isOfficial]);
 
-  // Subscribe to real-time gallery items from Firestore with safety timeout
+  // 2. Subscribe to Gallery
   useEffect(() => {
     if (!currentUser || !isOfficial) return;
-
-    // Safety timeout: Never hang in loading state for more than 1.8 seconds
-    const timeout = setTimeout(() => {
-      setLoadingGallery(false);
-    }, 1800);
+    const timeout = setTimeout(() => setLoadingGallery(false), 1800);
 
     let unsubscribe = () => {};
     try {
@@ -153,27 +187,112 @@ const OfficialDashboard = () => {
 
       unsubscribe = onSnapshot(q, (snapshot) => {
         clearTimeout(timeout);
-        const items = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setGalleryItems(items);
         setLoadingGallery(false);
       }, (err) => {
         clearTimeout(timeout);
-        console.warn('Firestore gallery listener notice:', err);
+        console.warn('Firestore gallery notice:', err);
         setLoadingGallery(false);
       });
     } catch (e) {
       clearTimeout(timeout);
-      console.warn('Firestore gallery init error:', e);
       setLoadingGallery(false);
     }
+    return () => { clearTimeout(timeout); unsubscribe(); };
+  }, [currentUser, isOfficial]);
 
-    return () => {
+  // 3. Subscribe to Activity Logs (Limit 200 recent for high performance)
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+    const timeout = setTimeout(() => setLoadingLogs(false), 2000);
+
+    let unsubscribe = () => {};
+    try {
+      const logsRef = collection(db, 'activityLogs');
+      const q = query(logsRef, orderBy('timestamp', 'desc'), limit(200));
+
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
+        const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setActivityLogs(logs);
+        setLoadingLogs(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore activityLogs notice:', err);
+        setLoadingLogs(false);
+      });
+    } catch (e) {
       clearTimeout(timeout);
-      unsubscribe();
-    };
+      setLoadingLogs(false);
+    }
+    return () => { clearTimeout(timeout); unsubscribe(); };
+  }, [currentUser, isOfficial]);
+
+  // 4. Subscribe to Login History
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+    const timeout = setTimeout(() => setLoadingLogins(false), 2000);
+
+    let unsubscribe = () => {};
+    try {
+      const loginsRef = collection(db, 'loginHistory');
+      const q = query(loginsRef, orderBy('loginTime', 'desc'), limit(100));
+
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
+        const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setLoginHistory(history);
+        setLoadingLogins(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore loginHistory notice:', err);
+        setLoadingLogins(false);
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      setLoadingLogins(false);
+    }
+    return () => { clearTimeout(timeout); unsubscribe(); };
+  }, [currentUser, isOfficial]);
+
+  // 5. Subscribe to Admin Users
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+    const timeout = setTimeout(() => setLoadingUsers(false), 2000);
+
+    let unsubscribe = () => {};
+    try {
+      const usersRef = collection(db, 'adminUsers');
+      unsubscribe = onSnapshot(usersRef, (snapshot) => {
+        clearTimeout(timeout);
+        const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Merge with pre-configured static officials if Firestore is empty
+        if (usersList.length === 0) {
+          const fallbackUsers = Object.entries(AUTHORIZED_OFFICIALS).map(([email, info], idx) => ({
+            id: `static-${idx}`,
+            email,
+            name: info.name,
+            role: info.role,
+            status: 'ACTIVE',
+            uid: `official-${idx + 1}`
+          }));
+          setAdminUsers(fallbackUsers);
+        } else {
+          setAdminUsers(usersList);
+        }
+        setLoadingUsers(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore adminUsers notice:', err);
+        setLoadingUsers(false);
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      setLoadingUsers(false);
+    }
+    return () => { clearTimeout(timeout); unsubscribe(); };
   }, [currentUser, isOfficial]);
 
   const handleLogout = async () => {
@@ -219,7 +338,6 @@ const OfficialDashboard = () => {
       let imageUrl = editingEvent?.imageUrl || '';
       let storagePath = editingEvent?.storagePath || '';
 
-      // Upload new poster image if selected
       if (eventFile) {
         try {
           const compressedPoster = await compressImage(eventFile, 1920, 1920, 0.85);
@@ -227,25 +345,14 @@ const OfficialDashboard = () => {
           const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
           const storageRef = ref(storage, fileName);
           
-          const uploadResult = await withTimeout(
-            uploadBytes(storageRef, compressedPoster),
-            6000,
-            'Storage unavailable'
-          );
+          const uploadResult = await withTimeout(uploadBytes(storageRef, compressedPoster), 6000, 'Storage unavailable');
           imageUrl = await getDownloadURL(uploadResult.ref);
           storagePath = fileName;
 
-          // Delete old poster if updating
           if (editingEvent?.storagePath) {
-            try {
-              await deleteObject(ref(storage, editingEvent.storagePath));
-            } catch (delErr) {
-              console.warn('Could not remove previous poster:', delErr);
-            }
+            try { await deleteObject(ref(storage, editingEvent.storagePath)); } catch (delErr) { /* ignore */ }
           }
         } catch (storageErr) {
-          // Fallback to storing compressed Base64 image directly in Firestore (100% Free, no Blaze needed)
-          console.info('Saving event poster directly to Firestore database:', storageErr);
           imageUrl = await compressImageToBase64(eventFile, 1200, 1200, 0.75);
           storagePath = '';
         }
@@ -262,32 +369,48 @@ const OfficialDashboard = () => {
       };
 
       if (editingEvent) {
-        // Update existing event
+        // UPDATE EVENT
         const eventDocRef = doc(db, 'events', editingEvent.id);
-        await withTimeout(
-          updateDoc(eventDocRef, eventPayload),
-          15000,
-          'Unable to reach Firestore database. Please verify Firestore Database is created in Firebase Console.'
-        );
+        await withTimeout(updateDoc(eventDocRef, eventPayload), 15000, 'Firestore update timed out.');
+        
+        // Automated Audit Logging
+        await logActivity({
+          action: 'UPDATE',
+          section: 'Events',
+          documentId: editingEvent.id,
+          documentTitle: eventForm.title.trim(),
+          beforeData: editingEvent,
+          afterData: eventPayload,
+          details: `Updated event "${eventForm.title}" scheduled for ${eventForm.date}`,
+          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+        });
+
         showAlert('success', `Event "${eventForm.title}" updated successfully!`);
       } else {
-        // Add new event
+        // CREATE EVENT
         eventPayload.createdBy = currentUser.email;
         eventPayload.createdAt = serverTimestamp();
-        await withTimeout(
-          addDoc(collection(db, 'events'), eventPayload),
-          15000,
-          'Unable to reach Firestore database. Please make sure Firestore Database is created and active in your Firebase Console (Build > Firestore Database > Create Database).'
-        );
+        const docRef = await withTimeout(addDoc(collection(db, 'events'), eventPayload), 15000, 'Firestore creation timed out.');
+        
+        // Automated Audit Logging
+        await logActivity({
+          action: 'CREATE',
+          section: 'Events',
+          documentId: docRef.id,
+          documentTitle: eventForm.title.trim(),
+          beforeData: null,
+          afterData: eventPayload,
+          details: `Created new event "${eventForm.title}" scheduled for ${eventForm.date}`,
+          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+        });
+
         showAlert('success', `Event "${eventForm.title}" added successfully!`);
       }
 
       setEventModalOpen(false);
     } catch (err) {
       console.error(err);
-      const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
-        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
-        : err.message;
+      const errMsg = err.message.includes('permission-denied') ? 'Permission Denied in Firestore Rules.' : err.message;
       setModalError(errMsg);
       showAlert('error', `Failed to save event: ${errMsg}`);
     } finally {
@@ -299,17 +422,23 @@ const OfficialDashboard = () => {
     if (!window.confirm(`Are you sure you want to delete the event "${ev.title}"?`)) return;
 
     try {
-      // Delete document
       await deleteDoc(doc(db, 'events', ev.id));
-      
-      // Delete poster from storage if exists
       if (ev.storagePath) {
-        try {
-          await deleteObject(ref(storage, ev.storagePath));
-        } catch (delErr) {
-          console.warn('Poster delete warning:', delErr);
-        }
+        try { await deleteObject(ref(storage, ev.storagePath)); } catch (delErr) { /* ignore */ }
       }
+
+      // Automated Audit Logging
+      await logActivity({
+        action: 'DELETE',
+        section: 'Events',
+        documentId: ev.id,
+        documentTitle: ev.title,
+        beforeData: ev,
+        afterData: null,
+        details: `Deleted event "${ev.title}" (Scheduled: ${ev.date})`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
       showAlert('success', `Event "${ev.title}" deleted.`);
     } catch (err) {
       console.error(err);
@@ -334,36 +463,39 @@ const OfficialDashboard = () => {
         let storagePath = '';
 
         try {
-          // Attempt Storage upload
           const compressedFile = await compressImage(file, 1920, 1920, 0.85);
           const fileExt = compressedFile.name.split('.').pop();
           storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
           const storageRef = ref(storage, storagePath);
 
-          const uploadResult = await withTimeout(
-            uploadBytes(storageRef, compressedFile),
-            6000,
-            'Storage unavailable'
-          );
+          const uploadResult = await withTimeout(uploadBytes(storageRef, compressedFile), 6000, 'Storage unavailable');
           imageUrl = await getDownloadURL(uploadResult.ref);
         } catch (storageErr) {
-          // Fallback to storing compressed Base64 photo directly in Firestore (100% Free Spark Plan)
-          console.info('Saving gallery photo directly to Cloud Firestore:', storageErr);
           imageUrl = await compressImageToBase64(file, 1200, 1200, 0.75);
           storagePath = '';
         }
 
-        await withTimeout(
-          addDoc(collection(db, 'gallery'), {
-            imageUrl,
-            storagePath,
-            caption: galleryCaption.trim(),
-            uploadedBy: currentUser.email,
-            uploadedAt: serverTimestamp()
-          }),
-          15000,
-          'Failed to record photo in Firestore. Ensure Firestore Database is active in Firebase Console.'
-        );
+        const photoPayload = {
+          imageUrl,
+          storagePath,
+          caption: galleryCaption.trim(),
+          uploadedBy: currentUser.email,
+          uploadedAt: serverTimestamp()
+        };
+
+        const docRef = await withTimeout(addDoc(collection(db, 'gallery'), photoPayload), 15000, 'Firestore gallery write timed out.');
+
+        // Automated Audit Logging
+        await logActivity({
+          action: 'CREATE',
+          section: 'Gallery',
+          documentId: docRef.id,
+          documentTitle: galleryCaption.trim() || file.name,
+          beforeData: null,
+          afterData: photoPayload,
+          details: `Uploaded new gallery photo "${galleryCaption.trim() || file.name}"`,
+          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+        });
 
         successCount++;
       }
@@ -373,10 +505,7 @@ const OfficialDashboard = () => {
       setGalleryCaption('');
     } catch (err) {
       console.error(err);
-      const errMsg = err.message.includes('permission-denied') || err.message.includes('unauthorized')
-        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
-        : err.message;
-      showAlert('error', `Failed to upload photos: ${errMsg}`);
+      showAlert('error', `Failed to upload photos: ${err.message}`);
     } finally {
       setGalleryUploading(false);
     }
@@ -388,15 +517,26 @@ const OfficialDashboard = () => {
 
     try {
       const photoRef = doc(db, 'gallery', editingPhoto.id);
-      await withTimeout(
-        updateDoc(photoRef, {
-          caption: photoCaptionForm.trim(),
-          updatedBy: currentUser.email,
-          updatedAt: serverTimestamp()
-        }),
-        8000,
-        'Failed to update caption in Firestore.'
-      );
+      const updatePayload = {
+        caption: photoCaptionForm.trim(),
+        updatedBy: currentUser.email,
+        updatedAt: serverTimestamp()
+      };
+
+      await withTimeout(updateDoc(photoRef, updatePayload), 8000, 'Failed to update caption.');
+
+      // Automated Audit Logging
+      await logActivity({
+        action: 'UPDATE',
+        section: 'Gallery',
+        documentId: editingPhoto.id,
+        documentTitle: photoCaptionForm.trim(),
+        beforeData: editingPhoto,
+        afterData: { ...editingPhoto, ...updatePayload },
+        details: `Updated gallery photo caption from "${editingPhoto.caption || 'None'}" to "${photoCaptionForm.trim()}"`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
       showAlert('success', 'Caption updated successfully!');
       setEditingPhoto(null);
     } catch (err) {
@@ -409,19 +549,23 @@ const OfficialDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this photo from the gallery?')) return;
 
     try {
-      await withTimeout(
-        deleteDoc(doc(db, 'gallery', photo.id)),
-        8000,
-        'Failed to delete photo document from Firestore.'
-      );
-
+      await withTimeout(deleteDoc(doc(db, 'gallery', photo.id)), 8000, 'Failed to delete photo from Firestore.');
       if (photo.storagePath) {
-        try {
-          await deleteObject(ref(storage, photo.storagePath));
-        } catch (delErr) {
-          console.warn('Gallery file delete warning:', delErr);
-        }
+        try { await deleteObject(ref(storage, photo.storagePath)); } catch (delErr) { /* ignore */ }
       }
+
+      // Automated Audit Logging
+      await logActivity({
+        action: 'DELETE',
+        section: 'Gallery',
+        documentId: photo.id,
+        documentTitle: photo.caption || 'Gallery Image',
+        beforeData: photo,
+        afterData: null,
+        details: `Deleted photo "${photo.caption || 'Untitled'}" from gallery`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
       showAlert('success', 'Photo removed from gallery.');
     } catch (err) {
       console.error(err);
@@ -429,9 +573,125 @@ const OfficialDashboard = () => {
     }
   };
 
+  // --- USER MANAGEMENT (RBAC) ACTIONS ---
+  const handleSaveUserRole = async (e) => {
+    e.preventDefault();
+    if (!isSuperAdmin) {
+      showAlert('error', 'Access Denied: Only Super Admins can manage team access and assign roles.');
+      return;
+    }
+
+    setUserSaving(true);
+    try {
+      const targetUid = editingUser?.uid || editingUser?.id || `user_${Date.now()}`;
+      const userDocRef = doc(db, 'adminUsers', targetUid);
+
+      const userPayload = {
+        name: userForm.name.trim(),
+        email: userForm.email.toLowerCase().trim(),
+        role: userForm.role,
+        status: userForm.status,
+        updatedBy: currentUser.email,
+        updatedAt: serverTimestamp()
+      };
+
+      await withTimeout(setDoc(userDocRef, userPayload, { merge: true }), 8000, 'Failed to update user role.');
+
+      // Automated Audit Logging
+      await logActivity({
+        action: 'ROLE_CHANGE',
+        section: 'Users',
+        documentId: targetUid,
+        documentTitle: userForm.email,
+        beforeData: editingUser,
+        afterData: userPayload,
+        details: `Updated access permissions for ${userForm.email} to ${userForm.role} (${userForm.status})`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
+      showAlert('success', `Access role for ${userForm.email} saved as ${userForm.role}.`);
+      setUserModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to save user role: ${err.message}`);
+    } finally {
+      setUserSaving(false);
+    }
+  };
+
+  // --- FILTERED & PAGINATED AUDIT LOGS ---
+  const filteredLogs = useMemo(() => {
+    return activityLogs.filter((log) => {
+      // 1. Action Filter
+      if (filterAction !== 'ALL' && log.action !== filterAction) return false;
+
+      // 2. Section Filter
+      if (filterSection !== 'ALL' && log.section !== filterSection) return false;
+
+      // 3. Date Filter
+      if (filterDateRange !== 'ALL') {
+        const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : (log.createdAtIso ? new Date(log.createdAtIso) : null);
+        if (logDate) {
+          const now = new Date();
+          if (filterDateRange === 'TODAY') {
+            const isToday = logDate.toDateString() === now.toDateString();
+            if (!isToday) return false;
+          } else if (filterDateRange === 'WEEK') {
+            const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            if (logDate < oneWeekAgo) return false;
+          } else if (filterDateRange === 'MONTH') {
+            const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            if (logDate < oneMonthAgo) return false;
+          }
+        }
+      }
+
+      // 4. Search Filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesUser = log.userName?.toLowerCase().includes(q) || log.userEmail?.toLowerCase().includes(q);
+        const matchesUid = log.uid?.toLowerCase().includes(q);
+        const matchesDocId = log.documentId?.toLowerCase().includes(q);
+        const matchesDetails = log.details?.toLowerCase().includes(q);
+        const matchesAction = log.action?.toLowerCase().includes(q);
+        const matchesSection = log.section?.toLowerCase().includes(q);
+        if (!matchesUser && !matchesUid && !matchesDocId && !matchesDetails && !matchesAction && !matchesSection) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [activityLogs, filterAction, filterSection, filterDateRange, searchQuery]);
+
+  const totalPages = Math.ceil(filteredLogs.length / pageSize) || 1;
+  const paginatedLogs = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredLogs.slice(start, start + pageSize);
+  }, [filteredLogs, currentPage, pageSize]);
+
+  // Statistics Summary
+  const stats = useMemo(() => {
+    const todayStr = new Date().toDateString();
+    const todayCount = activityLogs.filter(l => {
+      const d = l.timestamp?.toDate ? l.timestamp.toDate() : (l.createdAtIso ? new Date(l.createdAtIso) : null);
+      return d && d.toDateString() === todayStr;
+    }).length;
+
+    const uniqueAdmins = new Set(activityLogs.map(l => l.userEmail)).size;
+    const recentLoginsCount = loginHistory.length;
+
+    return {
+      totalActivities: activityLogs.length,
+      todayActivities: todayCount,
+      activeAdmins: uniqueAdmins || 3,
+      recentLogins: recentLoginsCount
+    };
+  }, [activityLogs, loginHistory]);
+
   const todayStr = getLocalTodayString();
 
-  // If authentication state is still resolving
+  // Auth resolving state
   if (authLoading) {
     return (
       <div className="official-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
@@ -444,7 +704,7 @@ const OfficialDashboard = () => {
     );
   }
 
-  // If user is not logged in or not an authorized official
+  // Access Denied for unauthorized guests
   if (!currentUser || !isOfficial) {
     return (
       <div className="official-dashboard-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '30px 20px' }}>
@@ -477,9 +737,14 @@ const OfficialDashboard = () => {
           <img src={logoImg} alt="MMA Crest" className="dashboard-logo" />
           <div className="dashboard-title-box">
             <h2>Official Dashboard</h2>
-            <span className="official-role-badge">
-              <FaUserShield /> {officialName} ({currentUser?.email})
-            </span>
+            <div className="official-role-badge-row">
+              <span className="official-role-badge">
+                <FaUserShield /> {officialName} ({currentUser?.email})
+              </span>
+              <span className={`role-pill pill-${userRole.toLowerCase()}`}>
+                {userRole}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -487,19 +752,19 @@ const OfficialDashboard = () => {
           <Link to="/" className="topbar-site-btn">
             <FaExternalLinkAlt /> View Website
           </Link>
-          <button onClick={handleLogout} className="topbar-logout-btn">
+          <button className="topbar-logout-btn" onClick={handleLogout}>
             <FaSignOutAlt /> Sign Out
           </button>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="dashboard-content-container">
-        {/* Alerts */}
+      {/* Main Body */}
+      <main className="dashboard-main-container">
+        {/* Floating Notification Alert */}
         <AnimatePresence>
           {alert && (
             <motion.div 
-              className={`dashboard-alert ${alert.type === 'success' ? 'alert-success' : 'alert-error'}`}
+              className={`dashboard-alert-banner alert-${alert.type}`}
               initial={{ opacity: 0, y: -15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
@@ -510,32 +775,55 @@ const OfficialDashboard = () => {
           )}
         </AnimatePresence>
 
-        {/* Dashboard Navigation Tabs */}
-        <div className="dashboard-nav-tabs">
+        {/* Dashboard 5-Tab Navigation */}
+        <nav className="dashboard-tab-nav">
           <button 
-            className={`dash-tab-btn ${activeTab === 'events' ? 'active-dash-tab' : ''}`}
+            className={`dash-tab-btn ${activeTab === 'events' ? 'active' : ''}`}
             onClick={() => setActiveTab('events')}
           >
             <FaCalendarAlt /> Event Management ({events.length})
           </button>
           
           <button 
-            className={`dash-tab-btn ${activeTab === 'gallery' ? 'active-dash-tab' : ''}`}
+            className={`dash-tab-btn ${activeTab === 'gallery' ? 'active' : ''}`}
             onClick={() => setActiveTab('gallery')}
           >
             <FaImages /> Gallery Management ({galleryItems.length})
           </button>
-        </div>
 
-        {/* --- EVENT MANAGEMENT TAB --- */}
+          <button 
+            className={`dash-tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
+            onClick={() => setActiveTab('activity')}
+          >
+            <FaClipboardList /> Activity Logs ({activityLogs.length})
+          </button>
+
+          <button 
+            className={`dash-tab-btn ${activeTab === 'logins' ? 'active' : ''}`}
+            onClick={() => setActiveTab('logins')}
+          >
+            <FaHistory /> Login History ({loginHistory.length})
+          </button>
+
+          <button 
+            className={`dash-tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+            onClick={() => setActiveTab('users')}
+          >
+            <FaUsersCog /> Users & Access ({adminUsers.length})
+          </button>
+        </nav>
+
+        {/* ======================================================== */}
+        {/* TAB 1: EVENT MANAGEMENT                                  */}
+        {/* ======================================================== */}
         {activeTab === 'events' && (
-          <section className="dashboard-section">
+          <section className="dash-section">
             <div className="section-toolbar">
               <div>
                 <h3>Manage Association Events</h3>
                 <p>Add, update, or remove events. Dates determine Upcoming vs Past status automatically.</p>
               </div>
-              <button className="btn-primary add-new-btn" onClick={openAddEventModal}>
+              <button className="btn-primary add-entity-btn" onClick={openAddEventModal}>
                 <FaPlus /> Add New Event
               </button>
             </div>
@@ -549,108 +837,107 @@ const OfficialDashboard = () => {
                 <p>Click "Add New Event" above to create your first cloud-managed event.</p>
               </div>
             ) : (
-              <div className="events-table-card glassmorphism">
-                <div className="table-responsive">
-                  <table className="dashboard-table">
-                    <thead>
-                      <tr>
-                        <th>Poster</th>
-                        <th>Event Title</th>
-                        <th>Date</th>
-                        <th>Current Status</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {events.map((ev) => {
-                        const isToday = ev.date === todayStr;
-                        const isUpcoming = ev.date > todayStr;
-                        const isPast = ev.date < todayStr;
+              <div className="table-responsive glassmorphism">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Poster</th>
+                      <th>Title</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Description</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {events.map((ev) => {
+                      const isToday = ev.date === todayStr;
+                      const isUpcoming = ev.date > todayStr;
+                      const isPast = ev.date < todayStr;
 
-                        return (
-                          <tr key={ev.id}>
-                            <td className="poster-td">
-                              {ev.imageUrl ? (
-                                <SafeImage 
-                                  src={ev.imageUrl} 
-                                  alt={ev.title} 
-                                  className="table-poster-thumb" 
-                                  fallbackText="No Poster"
-                                  timeoutMs={4000}
-                                />
-                              ) : (
-                                <div className="no-poster-box">
-                                  <FaImage />
-                                </div>
-                              )}
-                            </td>
-                            <td className="title-td">
-                              <strong>{ev.title}</strong>
-                            </td>
-                            <td className="date-td">
-                              <span className="badge-date">
-                                <FaCalendarAlt /> {formatDisplayDate(ev.date)}
+                      return (
+                        <tr key={ev.id}>
+                          <td className="poster-td">
+                            {ev.imageUrl ? (
+                              <SafeImage 
+                                src={ev.imageUrl} 
+                                alt={ev.title} 
+                                className="table-poster-thumb" 
+                                fallbackText="No Poster"
+                                timeoutMs={4000}
+                              />
+                            ) : (
+                              <div className="no-poster-box">
+                                <FaImage />
+                              </div>
+                            )}
+                          </td>
+                          <td className="title-td">
+                            <strong>{ev.title}</strong>
+                          </td>
+                          <td className="date-td">
+                            <span className="badge-date">
+                              <FaCalendarAlt /> {formatDisplayDate(ev.date)}
+                            </span>
+                          </td>
+                          <td className="status-td">
+                            {isToday && (
+                              <span className="badge-status status-today">
+                                <FaFire /> HAPPENING TODAY
                               </span>
-                            </td>
-                            <td className="status-td">
-                              {isToday && (
-                                <span className="badge-status status-today">
-                                  <FaFire /> HAPPENING TODAY
-                                </span>
-                              )}
-                              {isUpcoming && (
-                                <span className="badge-status status-upcoming">
-                                  <FaHourglassHalf /> UPCOMING
-                                </span>
-                              )}
-                              {isPast && (
-                                <span className="badge-status status-past">
-                                  <FaCheckCircle /> PAST EVENT
-                                </span>
-                              )}
-                            </td>
-                            <td className="desc-td">
-                              <p className="table-desc-text">{ev.description || '—'}</p>
-                            </td>
-                            <td className="actions-td">
-                              <button 
-                                className="action-icon-btn edit-btn" 
-                                onClick={() => openEditEventModal(ev)}
-                                title="Edit Event"
-                              >
-                                <FaEdit /> Edit
-                              </button>
-                              <button 
-                                className="action-icon-btn delete-btn" 
-                                onClick={() => handleDeleteEvent(ev)}
-                                title="Delete Event"
-                              >
-                                <FaTrash />
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                            )}
+                            {isUpcoming && (
+                              <span className="badge-status status-upcoming">
+                                <FaHourglassHalf /> UPCOMING
+                              </span>
+                            )}
+                            {isPast && (
+                              <span className="badge-status status-past">
+                                <FaCheckCircle /> PAST EVENT
+                              </span>
+                            )}
+                          </td>
+                          <td className="desc-td">
+                            <p className="table-desc-text">{ev.description || '—'}</p>
+                          </td>
+                          <td className="actions-td">
+                            <button 
+                              className="action-icon-btn edit-btn" 
+                              onClick={() => openEditEventModal(ev)}
+                              title="Edit Event"
+                            >
+                              <FaEdit /> Edit
+                            </button>
+                            <button 
+                              className="action-icon-btn delete-btn" 
+                              onClick={() => handleDeleteEvent(ev)}
+                              title="Delete Event"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>
         )}
 
-        {/* --- GALLERY MANAGEMENT TAB --- */}
+        {/* ======================================================== */}
+        {/* TAB 2: GALLERY MANAGEMENT                                */}
+        {/* ======================================================== */}
         {activeTab === 'gallery' && (
-          <section className="dashboard-section">
-            {/* Upload Box */}
+          <section className="dash-section">
             <div className="gallery-upload-card glassmorphism">
               <h3><FaUpload /> Upload Photos to Gallery</h3>
-              <p>Select one or multiple photos to upload directly to Firebase Storage.</p>
-              
+              <p>Select photos to publish directly to the live Association Gallery.</p>
+
               <form onSubmit={handleUploadGallery} className="gallery-upload-form">
-                <div className="upload-form-grid">
-                  <div className="form-group">
+                <div className="upload-input-group">
+                  <div className="form-group flex-1">
                     <label>Select Photo(s)</label>
                     <input 
                       type="file" 
@@ -658,18 +945,16 @@ const OfficialDashboard = () => {
                       multiple
                       required
                       onChange={(e) => setGalleryFiles(e.target.files)}
-                      className="file-input-control"
                     />
                   </div>
 
-                  <div className="form-group">
+                  <div className="form-group flex-1">
                     <label>Caption / Title (Optional)</label>
                     <input 
-                      type="text"
-                      placeholder="e.g. Match Day Celebration 2026"
+                      type="text" 
+                      placeholder="e.g. AFC Cup Match Celebration"
                       value={galleryCaption}
                       onChange={(e) => setGalleryCaption(e.target.value)}
-                      className="text-input-control"
                     />
                   </div>
                 </div>
@@ -679,13 +964,12 @@ const OfficialDashboard = () => {
                   className="btn-primary upload-submit-btn"
                   disabled={galleryUploading}
                 >
-                  <FaUpload /> {galleryUploading ? 'Uploading to Firebase Storage...' : 'Upload Photos'}
+                  <FaUpload /> {galleryUploading ? 'Publishing Photo(s)...' : 'Upload Photos'}
                 </button>
               </form>
             </div>
 
-            {/* Existing Uploaded Gallery Grid */}
-            <div className="section-toolbar" style={{ marginTop: '40px' }}>
+            <div className="section-toolbar" style={{ marginTop: '30px' }}>
               <div>
                 <h3>Cloud Gallery Photos ({galleryItems.length})</h3>
                 <p>Photos uploaded here appear immediately on the public website Gallery.</p>
@@ -740,6 +1024,355 @@ const OfficialDashboard = () => {
             )}
           </section>
         )}
+
+        {/* ======================================================== */}
+        {/* TAB 3: ACTIVITY & AUDIT LOGS                             */}
+        {/* ======================================================== */}
+        {activeTab === 'activity' && (
+          <section className="dash-section">
+            {/* Top Stat Summary Cards */}
+            <div className="audit-stats-grid">
+              <div className="stat-card glassmorphism">
+                <div className="stat-icon icon-emerald"><FaClipboardList /></div>
+                <div className="stat-info">
+                  <span className="stat-label">Total Activities</span>
+                  <h4 className="stat-number">{stats.totalActivities}</h4>
+                </div>
+              </div>
+
+              <div className="stat-card glassmorphism">
+                <div className="stat-icon icon-amber"><FaClock /></div>
+                <div className="stat-info">
+                  <span className="stat-label">Today's Activities</span>
+                  <h4 className="stat-number">{stats.todayActivities}</h4>
+                </div>
+              </div>
+
+              <div className="stat-card glassmorphism">
+                <div className="stat-icon icon-purple"><FaUserCheck /></div>
+                <div className="stat-info">
+                  <span className="stat-label">Active Officials</span>
+                  <h4 className="stat-number">{stats.activeAdmins}</h4>
+                </div>
+              </div>
+
+              <div className="stat-card glassmorphism">
+                <div className="stat-icon icon-cyan"><FaHistory /></div>
+                <div className="stat-info">
+                  <span className="stat-label">Recent Logins</span>
+                  <h4 className="stat-number">{stats.recentLogins}</h4>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter & Search Bar */}
+            <div className="audit-filter-bar glassmorphism">
+              <div className="filter-search-box">
+                <FaSearch className="search-icon" />
+                <input 
+                  type="text"
+                  placeholder="Search by user email, name, UID, document ID, details..."
+                  value={searchQuery}
+                  onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                />
+                {searchQuery && (
+                  <button className="clear-search-btn" onClick={() => setSearchQuery('')}>
+                    <FaTimes />
+                  </button>
+                )}
+              </div>
+
+              <div className="filter-dropdowns-group">
+                <div className="filter-select-wrapper">
+                  <FaFilter className="select-icon" />
+                  <select 
+                    value={filterAction} 
+                    onChange={(e) => { setFilterAction(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">All Actions</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                    <option value="LOGIN">LOGIN</option>
+                    <option value="LOGOUT">LOGOUT</option>
+                    <option value="ROLE_CHANGE">ROLE CHANGE</option>
+                  </select>
+                </div>
+
+                <div className="filter-select-wrapper">
+                  <FaLayerGroup className="select-icon" />
+                  <select 
+                    value={filterSection} 
+                    onChange={(e) => { setFilterSection(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">All Sections</option>
+                    <option value="Events">Events</option>
+                    <option value="Gallery">Gallery</option>
+                    <option value="Users">Users</option>
+                    <option value="Auth">Auth</option>
+                  </select>
+                </div>
+
+                <div className="filter-select-wrapper">
+                  <FaCalendarAlt className="select-icon" />
+                  <select 
+                    value={filterDateRange} 
+                    onChange={(e) => { setFilterDateRange(e.target.value); setCurrentPage(1); }}
+                  >
+                    <option value="ALL">All Time</option>
+                    <option value="TODAY">Today Only</option>
+                    <option value="WEEK">Last 7 Days</option>
+                    <option value="MONTH">Last 30 Days</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Audit Logs Table */}
+            {loadingLogs ? (
+              <div className="dashboard-loading">Loading real-time audit logs from Firestore...</div>
+            ) : filteredLogs.length === 0 ? (
+              <div className="empty-dashboard-card glassmorphism">
+                <FaClipboardList className="empty-dash-icon" />
+                <h4>No Matching Activity Logs</h4>
+                <p>No audit logs matched your search filters. Try clearing your filters.</p>
+              </div>
+            ) : (
+              <>
+                <div className="table-responsive glassmorphism">
+                  <table className="dashboard-table audit-table">
+                    <thead>
+                      <tr>
+                        <th>Date & Time</th>
+                        <th>User / Admin</th>
+                        <th>Action</th>
+                        <th>Section</th>
+                        <th>Details</th>
+                        <th>View</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedLogs.map((log) => {
+                        const dateStr = log.timestamp?.toDate 
+                          ? log.timestamp.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                          : (log.createdAtIso ? new Date(log.createdAtIso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent');
+
+                        return (
+                          <tr key={log.id} onClick={() => setSelectedLog(log)} className="clickable-row">
+                            <td className="log-date-td">
+                              <span className="log-date-text">{dateStr}</span>
+                            </td>
+                            <td className="log-user-td">
+                              <strong>{log.userName}</strong>
+                              <small className="log-email-sub">{log.userEmail}</small>
+                            </td>
+                            <td className="log-action-td">
+                              <span className={`activity-badge badge-${log.action?.toLowerCase() || 'default'}`}>
+                                {log.action}
+                              </span>
+                            </td>
+                            <td className="log-section-td">
+                              <span className="section-pill">{log.section}</span>
+                            </td>
+                            <td className="log-details-td">
+                              <p className="log-details-text">{log.details}</p>
+                            </td>
+                            <td className="log-inspect-td">
+                              <button 
+                                className="action-icon-btn inspect-btn"
+                                onClick={(e) => { e.stopPropagation(); setSelectedLog(log); }}
+                                title="Inspect Audit Diff"
+                              >
+                                <FaEye /> Diff
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="pagination-bar glassmorphism">
+                  <span className="pagination-info">
+                    Showing {(currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, filteredLogs.length)} of {filteredLogs.length} activity logs
+                  </span>
+
+                  <div className="pagination-btns">
+                    <button 
+                      className="page-nav-btn"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    >
+                      <FaChevronLeft /> Previous
+                    </button>
+
+                    <span className="page-current">Page {currentPage} of {totalPages}</span>
+
+                    <button 
+                      className="page-nav-btn"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    >
+                      Next <FaChevronRight />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </section>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 4: LOGIN HISTORY                                     */}
+        {/* ======================================================== */}
+        {activeTab === 'logins' && (
+          <section className="dash-section">
+            <div className="section-toolbar">
+              <div>
+                <h3>Official Login Sessions</h3>
+                <p>Complete chronological record of official access and authentication sessions.</p>
+              </div>
+            </div>
+
+            {loadingLogins ? (
+              <div className="dashboard-loading">Loading login history...</div>
+            ) : loginHistory.length === 0 ? (
+              <div className="empty-dashboard-card glassmorphism">
+                <FaHistory className="empty-dash-icon" />
+                <h4>No Login Sessions Recorded</h4>
+                <p>Official sign-in events will appear here automatically.</p>
+              </div>
+            ) : (
+              <div className="table-responsive glassmorphism">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Official User</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Login Time</th>
+                      <th>Status</th>
+                      <th>Client Platform</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loginHistory.map((item) => {
+                      const loginTimeStr = item.loginTime?.toDate 
+                        ? item.loginTime.toDate().toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                        : (item.createdAtIso ? new Date(item.createdAtIso).toLocaleString('en-US') : 'Recent');
+
+                      return (
+                        <tr key={item.id}>
+                          <td><strong>{item.userName}</strong></td>
+                          <td><span className="email-text">{item.userEmail}</span></td>
+                          <td><span className={`role-pill pill-${(item.userRole || 'ADMIN').toLowerCase()}`}>{item.userRole || 'ADMIN'}</span></td>
+                          <td><span className="badge-date"><FaClock /> {loginTimeStr}</span></td>
+                          <td>
+                            <span className="badge-status status-today">
+                              <FaCheckCircle /> {item.status || 'SUCCESS'}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="platform-tag">
+                              <FaDesktop /> {item.metadata?.platform || 'Web Browser'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ======================================================== */}
+        {/* TAB 5: USERS & ACCESS (RBAC)                             */}
+        {/* ======================================================== */}
+        {activeTab === 'users' && (
+          <section className="dash-section">
+            <div className="section-toolbar">
+              <div>
+                <h3>Team & Role-Based Access Control (RBAC)</h3>
+                <p>Manage administrative roles (SUPER_ADMIN, ADMIN, STAFF). Only Super Admins can alter roles.</p>
+              </div>
+              {isSuperAdmin && (
+                <button 
+                  className="btn-primary add-entity-btn"
+                  onClick={() => {
+                    setEditingUser(null);
+                    setUserForm({ name: '', email: '', role: ROLES.ADMIN, status: 'ACTIVE' });
+                    setUserModalOpen(true);
+                  }}
+                >
+                  <FaPlus /> Add Team Member
+                </button>
+              )}
+            </div>
+
+            {loadingUsers ? (
+              <div className="dashboard-loading">Loading authorized officials directory...</div>
+            ) : (
+              <div className="table-responsive glassmorphism">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Official Name</th>
+                      <th>Email</th>
+                      <th>Assigned Role</th>
+                      <th>Status</th>
+                      <th>User UID</th>
+                      {isSuperAdmin && <th>Manage</th>}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map((u) => (
+                      <tr key={u.id}>
+                        <td>
+                          <strong>{u.name || 'Official'}</strong>
+                        </td>
+                        <td><span className="email-text">{u.email}</span></td>
+                        <td>
+                          <span className={`role-pill pill-${(u.role || 'ADMIN').toLowerCase()}`}>
+                            {u.role || 'ADMIN'}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="badge-status status-today">
+                            <FaCheckCircle /> {u.status || 'ACTIVE'}
+                          </span>
+                        </td>
+                        <td><code className="info-code">{u.uid || u.id}</code></td>
+                        {isSuperAdmin && (
+                          <td>
+                            <button 
+                              className="action-icon-btn edit-btn"
+                              onClick={() => {
+                                setEditingUser(u);
+                                setUserForm({
+                                  name: u.name || '',
+                                  email: u.email || '',
+                                  role: u.role || ROLES.ADMIN,
+                                  status: u.status || 'ACTIVE'
+                                });
+                                setUserModalOpen(true);
+                              }}
+                            >
+                              <FaEdit /> Change Role
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* --- ADD / EDIT EVENT MODAL --- */}
@@ -772,7 +1405,7 @@ const OfficialDashboard = () => {
                   <input 
                     type="text"
                     required
-                    placeholder="e.g. Flag Hosting"
+                    placeholder="e.g. Flag Hosting Ceremony"
                     value={eventForm.title}
                     onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                   />
@@ -786,9 +1419,6 @@ const OfficialDashboard = () => {
                     value={eventForm.date}
                     onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
                   />
-                  <small className="form-help-text">
-                    The website will automatically calculate Upcoming vs Past status based on the real date.
-                  </small>
                 </div>
 
                 <div className="form-group">
@@ -806,28 +1436,16 @@ const OfficialDashboard = () => {
                   <input 
                     type="file"
                     accept="image/*"
-                    onChange={(e) => setEventFile(e.target.files[0])}
+                    onChange={(e) => setEventFile(e.target.files[0] || null)}
                   />
-                  {editingEvent?.imageUrl && !eventFile && (
-                    <small className="form-help-text">Current poster is attached. Choose a new file to replace it.</small>
-                  )}
                 </div>
 
                 <div className="modal-actions">
-                  <button 
-                    type="button" 
-                    className="modal-cancel-btn"
-                    onClick={() => setEventModalOpen(false)}
-                    disabled={eventSaving}
-                  >
+                  <button type="button" className="btn-secondary" onClick={() => setEventModalOpen(false)}>
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    className="btn-primary modal-save-btn"
-                    disabled={eventSaving}
-                  >
-                    {eventSaving ? 'Saving to Firestore...' : editingEvent ? 'Update Event' : 'Create Event'}
+                  <button type="submit" className="btn-primary" disabled={eventSaving}>
+                    {eventSaving ? 'Saving Event...' : editingEvent ? 'Save Changes' : 'Create Event'}
                   </button>
                 </div>
               </form>
@@ -854,39 +1472,115 @@ const OfficialDashboard = () => {
               </div>
 
               <form onSubmit={handleUpdateCaption} className="modal-form">
-                <div className="caption-preview-box">
-                  <img src={editingPhoto.imageUrl} alt="Preview" />
-                </div>
-
                 <div className="form-group">
                   <label>Caption</label>
                   <input 
                     type="text"
-                    placeholder="Enter caption..."
+                    required
                     value={photoCaptionForm}
                     onChange={(e) => setPhotoCaptionForm(e.target.value)}
-                    autoFocus
                   />
                 </div>
 
                 <div className="modal-actions">
-                  <button 
-                    type="button" 
-                    className="modal-cancel-btn"
-                    onClick={() => setEditingPhoto(null)}
-                  >
+                  <button type="button" className="btn-secondary" onClick={() => setEditingPhoto(null)}>
                     Cancel
                   </button>
-                  <button 
-                    type="submit" 
-                    className="btn-primary modal-save-btn"
-                  >
-                    Save Caption
+                  <button type="submit" className="btn-primary">
+                    Update Caption
                   </button>
                 </div>
               </form>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- USER ROLE MANAGEMENT MODAL (SUPER ADMIN ONLY) --- */}
+      <AnimatePresence>
+        {userModalOpen && (
+          <div className="modal-backdrop">
+            <motion.div 
+              className="dashboard-modal glassmorphism"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <div className="modal-header">
+                <h3>{editingUser ? 'Edit User Permissions' : 'Add Team Member'}</h3>
+                <button className="modal-close-btn" onClick={() => setUserModalOpen(false)}>
+                  <FaTimes />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveUserRole} className="modal-form">
+                <div className="form-group">
+                  <label>Official Name *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Subhankar Banerjee"
+                    value={userForm.name}
+                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Official Email Address *</label>
+                  <input 
+                    type="email"
+                    required
+                    disabled={!!editingUser}
+                    placeholder="name@gmail.com"
+                    value={userForm.email}
+                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Access Role *</label>
+                  <select 
+                    value={userForm.role}
+                    onChange={(e) => setUserForm({ ...userForm, role: e.target.value })}
+                  >
+                    <option value={ROLES.SUPER_ADMIN}>SUPER_ADMIN (Full control + User Management)</option>
+                    <option value={ROLES.ADMIN}>ADMIN (Events, Gallery, Activity Logs)</option>
+                    <option value={ROLES.STAFF}>STAFF (Events & Gallery only)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Status *</label>
+                  <select 
+                    value={userForm.status}
+                    onChange={(e) => setUserForm({ ...userForm, status: e.target.value })}
+                  >
+                    <option value="ACTIVE">ACTIVE</option>
+                    <option value="SUSPENDED">SUSPENDED</option>
+                  </select>
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setUserModalOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={userSaving}>
+                    {userSaving ? 'Saving Role...' : 'Save Permissions'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- ACTIVITY DETAILS & DIFF INSPECTOR MODAL --- */}
+      <AnimatePresence>
+        {selectedLog && (
+          <ActivityDetailsModal 
+            log={selectedLog}
+            onClose={() => setSelectedLog(null)}
+          />
         )}
       </AnimatePresence>
     </div>

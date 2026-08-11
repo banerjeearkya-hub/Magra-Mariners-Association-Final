@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Function to verify if request is authenticated as one of the 3 authorized officials
+    // Function to verify if request is authenticated as one of the authorized officials
     function isAuthorizedOfficial() {
       return request.auth != null &&
              request.auth.token.email != null &&
@@ -13,15 +13,35 @@ service cloud.firestore {
              );
     }
 
-    // Events Collection: Public can view, only authorized officials can write/edit/delete
+    // Events Collection: Public can view, only authorized officials can manage
     match /events/{eventId} {
       allow read: if true;
       allow create, update, delete: if isAuthorizedOfficial();
     }
 
-    // Gallery Collection: Public can view, only authorized officials can write/edit/delete
+    // Gallery Collection: Public can view, only authorized officials can manage
     match /gallery/{imageId} {
       allow read: if true;
+      allow create, update, delete: if isAuthorizedOfficial();
+    }
+
+    // Activity & Audit Logs Collection: Strictly Append-Only (Immutable)
+    match /activityLogs/{logId} {
+      allow read: if isAuthorizedOfficial();
+      allow create: if isAuthorizedOfficial();
+      allow update, delete: if false; // Append-Only! Logs cannot be modified or deleted
+    }
+
+    // Login History Collection: Chronological Session Log
+    match /loginHistory/{sessionId} {
+      allow read: if isAuthorizedOfficial();
+      allow create, update: if isAuthorizedOfficial();
+      allow delete: if false;
+    }
+
+    // Admin Users Directory (RBAC)
+    match /adminUsers/{userId} {
+      allow read: if isAuthorizedOfficial();
       allow create, update, delete: if isAuthorizedOfficial();
     }
 
