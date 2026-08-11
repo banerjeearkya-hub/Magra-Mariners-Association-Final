@@ -25,7 +25,7 @@ export const storage = getStorage(app);
 // Map of Exactly 3 Authorized Officials
 export const AUTHORIZED_OFFICIALS = {
   'sm429113@gmail.com': 'Soumyadeep Modak',
-  'ghostygamer47@gmail.com': 'Ghosty Gamer',
+  'ghostygamer47@gmail.com': 'Subhankar Banerjee',
   'arnabinsky@gmail.com': 'Arnab Mukherjee'
 };
 
