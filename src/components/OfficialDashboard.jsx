@@ -454,7 +454,7 @@ const OfficialDashboard = () => {
           </div>
           <h3 style={{ fontFamily: 'var(--font-secondary)', fontSize: '1.5rem', marginBottom: '10px' }}>Official Access Required</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '25px' }}>
-            This section is restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Arkya Banerjee</strong>, <strong>Arnab Mukherjee</strong>.
+            This section is restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Ghosty Gamer</strong>, <strong>Arnab Mukherjee</strong>.
           </p>
           <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/login" className="btn-primary" style={{ padding: '12px 26px', borderRadius: '25px', textDecoration: 'none', fontWeight: '700' }}>

@@ -229,7 +229,7 @@ const OfficialLogin = () => {
         </form>
 
         <div className="login-footer-info">
-          <p>Restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Arkya Banerjee</strong>, <strong>Arnab Mukherjee</strong>.</p>
+          <p>Restricted to authorized officials only: <strong>Soumyadeep Modak</strong>, <strong>Ghosty Gamer</strong>, <strong>Arnab Mukherjee</strong>.</p>
         </div>
       </motion.div>
     </div>
