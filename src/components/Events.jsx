@@ -11,6 +11,7 @@ import {
   FaExternalLinkAlt, 
   FaFire 
 } from 'react-icons/fa';
+import SafeImage from './SafeImage';
 import './Events.css';
 
 // Helper to get local date in YYYY-MM-DD format based on the user's browser/device clock
@@ -63,13 +64,20 @@ const Events = ({ data }) => {
   const [firestoreEvents, setFirestoreEvents] = useState([]);
   const [hasFirestoreData, setHasFirestoreData] = useState(false);
 
-  // Subscribe to real-time events from Cloud Firestore
+  // Subscribe to real-time events from Cloud Firestore with timeout fallback
   useEffect(() => {
+    let unsubscribe = () => {};
+    const timeout = setTimeout(() => {
+      // If Firestore takes too long, seamlessly fall back to siteData
+      setHasFirestoreData(false);
+    }, 1500);
+
     try {
       const eventsRef = collection(db, 'events');
       const q = query(eventsRef, orderBy('date', 'asc'));
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
         if (!snapshot.empty) {
           const cloudItems = snapshot.docs.map(doc => ({
             id: doc.id,
@@ -78,18 +86,23 @@ const Events = ({ data }) => {
           setFirestoreEvents(cloudItems);
           setHasFirestoreData(true);
         } else {
-          // If collection is empty in Firestore, fall back to initial static data
           setHasFirestoreData(false);
         }
       }, (err) => {
+        clearTimeout(timeout);
         console.warn('Firestore live listener notice (using static events fallback):', err);
         setHasFirestoreData(false);
       });
-
-      return unsubscribe;
     } catch (e) {
+      clearTimeout(timeout);
       console.warn('Could not initialize Firestore listener:', e);
+      setHasFirestoreData(false);
     }
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   // Handle responsive layout for Ant Design timeline
@@ -301,7 +314,14 @@ const Events = ({ data }) => {
                           {/* Event Poster / Image */}
                           {item.imageUrl && (
                             <div className="event-poster-container">
-                              <img src={item.imageUrl} alt={item.title} className="event-poster-img" />
+                              <SafeImage 
+                                src={item.imageUrl} 
+                                alt={item.title} 
+                                className="event-poster-img" 
+                                fallbackText="Poster unavailable"
+                                timeoutMs={5000}
+                                showRetry={true}
+                              />
                             </div>
                           )}
 

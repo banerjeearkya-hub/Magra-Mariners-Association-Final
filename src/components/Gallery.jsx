@@ -10,6 +10,7 @@ import {
   FaAward,
   FaHistory
 } from 'react-icons/fa';
+import SafeImage from './SafeImage';
 import './Gallery.css';
 
 const Gallery = ({ data }) => {
@@ -18,13 +19,19 @@ const Gallery = ({ data }) => {
   const [visibleCount, setVisibleCount] = useState(16);
   const [cloudPhotos, setCloudPhotos] = useState([]);
 
-  // Subscribe to Cloud Firestore live gallery items
+  // Subscribe to Cloud Firestore live gallery items with timeout fallback
   useEffect(() => {
+    let unsubscribe = () => {};
+    const timeout = setTimeout(() => {
+      // Fall back seamlessly if Firestore is taking time
+    }, 1500);
+
     try {
       const galleryRef = collection(db, 'gallery');
       const q = query(galleryRef, orderBy('uploadedAt', 'desc'));
 
-      const unsubscribe = onSnapshot(q, (snapshot) => {
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
         if (!snapshot.empty) {
           const items = snapshot.docs.map(doc => ({
             id: `cloud-${doc.id}`,
@@ -36,13 +43,18 @@ const Gallery = ({ data }) => {
           setCloudPhotos([]);
         }
       }, (err) => {
+        clearTimeout(timeout);
         console.warn('Firestore gallery listener notice:', err);
       });
-
-      return unsubscribe;
     } catch (e) {
+      clearTimeout(timeout);
       console.warn('Could not connect to Firestore gallery collection:', e);
     }
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   // Merge cloud uploaded photos (at top) with base static gallery images
@@ -179,11 +191,13 @@ const Gallery = ({ data }) => {
                 >
                   <div className="gallery-card glassmorphism">
                     <div className="gallery-img-container">
-                      <img 
+                      <SafeImage 
                         src={getImageUrl(image)} 
                         alt={getImageTitle(image)} 
                         className="gallery-img"
-                        loading="lazy" 
+                        fallbackText="Photo unavailable"
+                        timeoutMs={6000}
+                        showRetry={true}
                       />
                       <div className="gallery-hover-overlay">
                         <FaSearchPlus className="zoom-icon" />
@@ -272,10 +286,13 @@ const Gallery = ({ data }) => {
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <img 
+              <SafeImage 
                 src={getImageUrl(filteredImages[activeImageIndex])} 
                 alt={getImageTitle(filteredImages[activeImageIndex])} 
                 className="lightbox-img"
+                fallbackText="Image unavailable"
+                timeoutMs={6000}
+                showRetry={true}
               />
               <div className="lightbox-caption glassmorphism">
                 <h3>{getImageTitle(filteredImages[activeImageIndex])}</h3>

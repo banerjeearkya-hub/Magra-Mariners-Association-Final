@@ -38,6 +38,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { db, storage } from '../firebase/config';
 import { getLocalTodayString, formatDisplayDate, normalizeDateStr } from './Events';
+import SafeImage from './SafeImage';
 import logoImg from '../assets/logo.png';
 import './OfficialDashboard.css';
 
@@ -85,48 +86,82 @@ const OfficialDashboard = () => {
     }
   }, [currentUser, isOfficial, navigate]);
 
-  // Subscribe to real-time events from Firestore
+  // Subscribe to real-time events from Firestore with safety timeout
   useEffect(() => {
     if (!currentUser || !isOfficial) return;
 
-    const eventsRef = collection(db, 'events');
-    const q = query(eventsRef, orderBy('date', 'asc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setEvents(items);
+    // Safety timeout: Never hang in loading state for more than 1.8 seconds
+    const timeout = setTimeout(() => {
       setLoadingEvents(false);
-    }, (err) => {
-      console.error('Firestore events listener error:', err);
-      setLoadingEvents(false);
-    });
+    }, 1800);
 
-    return unsubscribe;
+    let unsubscribe = () => {};
+    try {
+      const eventsRef = collection(db, 'events');
+      const q = query(eventsRef, orderBy('date', 'asc'));
+
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
+        const items = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setEvents(items);
+        setLoadingEvents(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore events listener notice:', err);
+        setLoadingEvents(false);
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      console.warn('Firestore events init error:', e);
+      setLoadingEvents(false);
+    }
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, [currentUser, isOfficial]);
 
-  // Subscribe to real-time gallery items from Firestore
+  // Subscribe to real-time gallery items from Firestore with safety timeout
   useEffect(() => {
     if (!currentUser || !isOfficial) return;
 
-    const galleryRef = collection(db, 'gallery');
-    const q = query(galleryRef, orderBy('uploadedAt', 'desc'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const items = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setGalleryItems(items);
+    // Safety timeout: Never hang in loading state for more than 1.8 seconds
+    const timeout = setTimeout(() => {
       setLoadingGallery(false);
-    }, (err) => {
-      console.error('Firestore gallery listener error:', err);
-      setLoadingGallery(false);
-    });
+    }, 1800);
 
-    return unsubscribe;
+    let unsubscribe = () => {};
+    try {
+      const galleryRef = collection(db, 'gallery');
+      const q = query(galleryRef, orderBy('uploadedAt', 'desc'));
+
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        clearTimeout(timeout);
+        const items = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setGalleryItems(items);
+        setLoadingGallery(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore gallery listener notice:', err);
+        setLoadingGallery(false);
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      console.warn('Firestore gallery init error:', e);
+      setLoadingGallery(false);
+    }
+
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, [currentUser, isOfficial]);
 
   const handleLogout = async () => {
@@ -429,7 +464,13 @@ const OfficialDashboard = () => {
                           <tr key={ev.id}>
                             <td className="poster-td">
                               {ev.imageUrl ? (
-                                <img src={ev.imageUrl} alt={ev.title} className="table-poster-thumb" />
+                                <SafeImage 
+                                  src={ev.imageUrl} 
+                                  alt={ev.title} 
+                                  className="table-poster-thumb" 
+                                  fallbackText="No Poster"
+                                  timeoutMs={4000}
+                                />
                               ) : (
                                 <div className="no-poster-box">
                                   <FaImage />
@@ -556,7 +597,13 @@ const OfficialDashboard = () => {
                 {galleryItems.map((photo) => (
                   <div key={photo.id} className="dash-gallery-card glassmorphism">
                     <div className="dash-photo-wrapper">
-                      <img src={photo.imageUrl} alt={photo.caption || 'Gallery photo'} />
+                      <SafeImage 
+                        src={photo.imageUrl} 
+                        alt={photo.caption || 'Gallery photo'} 
+                        fallbackText="Image unavailable"
+                        timeoutMs={5000}
+                        showRetry={true}
+                      />
                     </div>
                     <div className="dash-photo-info">
                       <p className="photo-caption-text">{photo.caption || 'No caption'}</p>
