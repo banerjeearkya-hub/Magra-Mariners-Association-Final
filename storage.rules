@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Function to verify if request is authenticated as one of the 3 authorized officials
+    function isAuthorizedOfficial() {
+      return request.auth != null &&
+             request.auth.token.email != null &&
+             (
+               request.auth.token.email.lower() == 'sm429113@gmail.com' ||
+               request.auth.token.email.lower() == 'banerjeearkya@gmail.com' ||
+               request.auth.token.email.lower() == 'arnabinsky@gmail.com'
+             );
+    }
+
+    // Event Posters: Public can view, only authorized officials can upload or delete
+    match /events/{allPaths=**} {
+      allow read: if true;
+      allow write, delete: if isAuthorizedOfficial();
+    }
+
+    // Gallery Photos: Public can view, only authorized officials can upload or delete
+    match /gallery/{allPaths=**} {
+      allow read: if true;
+      allow write, delete: if isAuthorizedOfficial();
+    }
+
+    // Fallback: Deny other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

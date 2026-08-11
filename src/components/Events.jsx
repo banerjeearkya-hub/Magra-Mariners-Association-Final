@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Timeline, Tag } from 'antd';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { 
   FaCalendarAlt, 
   FaCheckCircle, 
@@ -58,6 +60,37 @@ const Events = ({ data }) => {
   const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past' | 'all'
   const [timelineMode, setTimelineMode] = useState('alternate');
   const [todayStr, setTodayStr] = useState(getLocalTodayString());
+  const [firestoreEvents, setFirestoreEvents] = useState([]);
+  const [hasFirestoreData, setHasFirestoreData] = useState(false);
+
+  // Subscribe to real-time events from Cloud Firestore
+  useEffect(() => {
+    try {
+      const eventsRef = collection(db, 'events');
+      const q = query(eventsRef, orderBy('date', 'asc'));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const cloudItems = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setFirestoreEvents(cloudItems);
+          setHasFirestoreData(true);
+        } else {
+          // If collection is empty in Firestore, fall back to initial static data
+          setHasFirestoreData(false);
+        }
+      }, (err) => {
+        console.warn('Firestore live listener notice (using static events fallback):', err);
+        setHasFirestoreData(false);
+      });
+
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Could not initialize Firestore listener:', e);
+    }
+  }, []);
 
   // Handle responsive layout for Ant Design timeline
   useEffect(() => {
@@ -87,8 +120,9 @@ const Events = ({ data }) => {
     return () => clearInterval(interval);
   }, [todayStr]);
 
-  // Extract raw items supporting both data.items and data.timeline structures
-  const rawItems = data?.items || data?.timeline || (Array.isArray(data) ? data : []);
+  // Extract raw items: prefer Firestore live items if available, otherwise use data.items fallback
+  const baseItems = data?.items || data?.timeline || (Array.isArray(data) ? data : []);
+  const rawItems = hasFirestoreData && firestoreEvents.length > 0 ? firestoreEvents : baseItems;
 
   // Process and enrich events with status based on real device date
   const processedItems = rawItems.map((item, index) => {
@@ -265,9 +299,9 @@ const Events = ({ data }) => {
                           </div>
 
                           {/* Event Poster / Image */}
-                          {item.image && (
+                          {item.imageUrl && (
                             <div className="event-poster-container">
-                              <img src={item.image} alt={item.title} className="event-poster-img" />
+                              <img src={item.imageUrl} alt={item.title} className="event-poster-img" />
                             </div>
                           )}
 

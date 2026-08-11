@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import './styles/global.css';
 import './App.css';
@@ -8,6 +8,9 @@ import logoImg from './assets/logo.png';
 
 // Central Site Data
 import { siteData } from './data/siteData';
+
+// Context
+import { AuthProvider } from './context/AuthContext';
 
 // Components
 import Loader from './components/Loader';
@@ -25,6 +28,78 @@ import Club from './components/Club';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import ScrollToTopRoute from './components/ScrollToTopRoute';
+import OfficialLogin from './components/OfficialLogin';
+import OfficialDashboard from './components/OfficialDashboard';
+
+// Layout wrapper to conditionally render public navbar/footer
+const AppLayout = ({ navLinks }) => {
+  const location = useLocation();
+  const isAuthOrDashboard = location.pathname === '/login' || location.pathname === '/dashboard';
+
+  return (
+    <>
+      {/* Reset window scroll position on route transitions */}
+      <ScrollToTopRoute />
+
+      {/* Sticky Navigation - on public pages only */}
+      {!isAuthOrDashboard && <Navbar navLinks={navLinks} />}
+      
+      {/* Main Content Layout */}
+      <main>
+        <Routes>
+          {/* Home Page Route */}
+          <Route path="/" element={
+            <>
+              <Hero data={siteData.hero} />
+              <Statistics data={siteData.statistics} />
+            </>
+          } />
+
+          {/* Club Page Route */}
+          <Route path="/club" element={<Club />} />
+
+          {/* About Us Page Route */}
+          <Route path="/about" element={<About data={siteData.about} />} />
+
+          {/* Executive Committee Page Route */}
+          <Route path="/committee" element={<Committee data={siteData.committee} />} />
+
+          {/* Gallery Page Route */}
+          <Route path="/gallery" element={<Gallery data={siteData.gallery} />} />
+
+          {/* Brochure Page Route */}
+          <Route path="/brochure" element={<Brochure data={siteData.gallery} />} />
+
+          {/* Events Page Route */}
+          <Route path="/events" element={<Events data={siteData.events} />} />
+
+          {/* Contact Page Route */}
+          <Route path="/contact" element={
+            <>
+              <Contact data={siteData.contact} />
+              <SocialFollow />
+            </>
+          } />
+
+          {/* Official Authentication Portal */}
+          <Route path="/login" element={<OfficialLogin />} />
+
+          {/* Official Dashboard (Protected) */}
+          <Route path="/dashboard" element={<OfficialDashboard />} />
+
+          {/* Fallback Wildcard Route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+
+      {/* Footer - on public pages only */}
+      {!isAuthOrDashboard && <Footer logo={logoImg} navLinks={navLinks} />}
+      
+      {/* Floating back-to-top widget */}
+      {!isAuthOrDashboard && <ScrollToTop />}
+    </>
+  );
+};
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -52,74 +127,20 @@ function App() {
   ];
 
   return (
-    <div className="app-container">
-      {/* Entrance Loader Animation */}
-      <AnimatePresence>
-        {loading && <Loader />}
-      </AnimatePresence>
+    <AuthProvider>
+      <div className="app-container">
+        {/* Entrance Loader Animation */}
+        <AnimatePresence>
+          {loading && <Loader />}
+        </AnimatePresence>
 
-      {!loading && (
-        <HashRouter>
-          {/* Reset window scroll position on route transitions */}
-          <ScrollToTopRoute />
-
-          {/* Sticky Navigation */}
-          <Navbar navLinks={navLinks} />
-          
-          {/* Main Page Layout */}
-          <main>
-            <Routes>
-              {/* Home Page Route */}
-              <Route path="/" element={
-                <>
-                  <Hero data={siteData.hero} />
-                  
-                  {/* Highlights statistics counter */}
-                  <Statistics data={siteData.statistics} />
-                </>
-              } />
-
-              {/* Club Page Route */}
-              <Route path="/club" element={<Club />} />
-
-              {/* About Us Page Route */}
-              <Route path="/about" element={<About data={siteData.about} />} />
-
-              {/* Executive Committee Page Route */}
-              <Route path="/committee" element={<Committee data={siteData.committee} />} />
-
-              {/* Gallery Page Route */}
-              {siteData.gallery.images && siteData.gallery.images.length > 0 && (
-                <Route path="/gallery" element={<Gallery data={siteData.gallery} />} />
-              )}
-
-              {/* Brochure Page Route */}
-              <Route path="/brochure" element={<Brochure data={siteData.gallery} />} />
-
-              {/* Events Page Route */}
-              <Route path="/events" element={<Events data={siteData.events} />} />
-
-              {/* Contact Page Route */}
-              <Route path="/contact" element={
-                <>
-                  <Contact data={siteData.contact} />
-                  <SocialFollow />
-                </>
-              } />
-
-              {/* Fallback Wildcard Route */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-
-          {/* Footer */}
-          <Footer logo={logoImg} navLinks={navLinks} />
-          
-          {/* Floating back-to-top widget */}
-          <ScrollToTop />
-        </HashRouter>
-      )}
-    </div>
+        {!loading && (
+          <HashRouter>
+            <AppLayout navLinks={navLinks} />
+          </HashRouter>
+        )}
+      </div>
+    </AuthProvider>
   );
 }
 

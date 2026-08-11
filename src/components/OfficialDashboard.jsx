@@ -1,0 +1,734 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  serverTimestamp,
+  query,
+  orderBy 
+} from 'firebase/firestore';
+import { 
+  ref, 
+  uploadBytes, 
+  getDownloadURL, 
+  deleteObject 
+} from 'firebase/storage';
+import { 
+  FaCalendarAlt, 
+  FaImages, 
+  FaPlus, 
+  FaEdit, 
+  FaTrash, 
+  FaSignOutAlt, 
+  FaUserShield, 
+  FaUpload, 
+  FaExternalLinkAlt,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaTimes,
+  FaHourglassHalf,
+  FaFire,
+  FaImage
+} from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { db, storage } from '../firebase/config';
+import { getLocalTodayString, formatDisplayDate, normalizeDateStr } from './Events';
+import logoImg from '../assets/logo.png';
+import './OfficialDashboard.css';
+
+const OfficialDashboard = () => {
+  const { currentUser, isOfficial, officialName, logout } = useAuth();
+  const navigate = useNavigate();
+
+  // Tab State: 'events' | 'gallery'
+  const [activeTab, setActiveTab] = useState('events');
+
+  // Events & Gallery State
+  const [events, setEvents] = useState([]);
+  const [galleryItems, setGalleryItems] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  const [loadingGallery, setLoadingGallery] = useState(true);
+
+  // Modal States
+  const [eventModalOpen, setEventModalOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [eventForm, setEventForm] = useState({ title: '', date: '', description: '' });
+  const [eventFile, setEventFile] = useState(null);
+  const [eventSaving, setEventSaving] = useState(false);
+
+  // Gallery Upload State
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [galleryCaption, setGalleryCaption] = useState('');
+  const [galleryUploading, setGalleryUploading] = useState(false);
+
+  // Edit Caption State
+  const [editingPhoto, setEditingPhoto] = useState(null);
+  const [photoCaptionForm, setPhotoCaptionForm] = useState('');
+
+  // Notification / Alert Message
+  const [alert, setAlert] = useState(null);
+
+  const showAlert = (type, message) => {
+    setAlert({ type, message });
+    setTimeout(() => setAlert(null), 5000);
+  };
+
+  // Enforce official authentication
+  useEffect(() => {
+    if (!currentUser || !isOfficial) {
+      navigate('/login', { replace: true });
+    }
+  }, [currentUser, isOfficial, navigate]);
+
+  // Subscribe to real-time events from Firestore
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+
+    const eventsRef = collection(db, 'events');
+    const q = query(eventsRef, orderBy('date', 'asc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setEvents(items);
+      setLoadingEvents(false);
+    }, (err) => {
+      console.error('Firestore events listener error:', err);
+      setLoadingEvents(false);
+    });
+
+    return unsubscribe;
+  }, [currentUser, isOfficial]);
+
+  // Subscribe to real-time gallery items from Firestore
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+
+    const galleryRef = collection(db, 'gallery');
+    const q = query(galleryRef, orderBy('uploadedAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setGalleryItems(items);
+      setLoadingGallery(false);
+    }, (err) => {
+      console.error('Firestore gallery listener error:', err);
+      setLoadingGallery(false);
+    });
+
+    return unsubscribe;
+  }, [currentUser, isOfficial]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // --- EVENT MANAGEMENT ACTIONS ---
+  const openAddEventModal = () => {
+    setEditingEvent(null);
+    setEventForm({ title: '', date: getLocalTodayString(), description: '' });
+    setEventFile(null);
+    setEventModalOpen(true);
+  };
+
+  const openEditEventModal = (ev) => {
+    setEditingEvent(ev);
+    setEventForm({
+      title: ev.title || '',
+      date: ev.date || getLocalTodayString(),
+      description: ev.description || ''
+    });
+    setEventFile(null);
+    setEventModalOpen(true);
+  };
+
+  const handleSaveEvent = async (e) => {
+    e.preventDefault();
+    if (!eventForm.title.trim() || !eventForm.date.trim()) {
+      showAlert('error', 'Event title and date are required.');
+      return;
+    }
+
+    setEventSaving(true);
+    try {
+      let imageUrl = editingEvent?.imageUrl || '';
+      let storagePath = editingEvent?.storagePath || '';
+
+      // Upload new poster image if selected
+      if (eventFile) {
+        const fileExt = eventFile.name.split('.').pop();
+        const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const storageRef = ref(storage, fileName);
+        
+        const uploadResult = await uploadBytes(storageRef, eventFile);
+        imageUrl = await getDownloadURL(uploadResult.ref);
+        storagePath = fileName;
+
+        // Delete old poster if updating
+        if (editingEvent?.storagePath) {
+          try {
+            await deleteObject(ref(storage, editingEvent.storagePath));
+          } catch (delErr) {
+            console.warn('Could not remove previous poster:', delErr);
+          }
+        }
+      }
+
+      const eventPayload = {
+        title: eventForm.title.trim(),
+        date: normalizeDateStr(eventForm.date.trim()),
+        description: eventForm.description.trim(),
+        imageUrl,
+        storagePath,
+        updatedBy: currentUser.email,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingEvent) {
+        // Update existing event
+        const eventDocRef = doc(db, 'events', editingEvent.id);
+        await updateDoc(eventDocRef, eventPayload);
+        showAlert('success', `Event "${eventForm.title}" updated successfully!`);
+      } else {
+        // Add new event
+        eventPayload.createdBy = currentUser.email;
+        eventPayload.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'events'), eventPayload);
+        showAlert('success', `Event "${eventForm.title}" added successfully!`);
+      }
+
+      setEventModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to save event: ${err.message}`);
+    } finally {
+      setEventSaving(false);
+    }
+  };
+
+  const handleDeleteEvent = async (ev) => {
+    if (!window.confirm(`Are you sure you want to delete the event "${ev.title}"?`)) return;
+
+    try {
+      // Delete document
+      await deleteDoc(doc(db, 'events', ev.id));
+      
+      // Delete poster from storage if exists
+      if (ev.storagePath) {
+        try {
+          await deleteObject(ref(storage, ev.storagePath));
+        } catch (delErr) {
+          console.warn('Poster delete warning:', delErr);
+        }
+      }
+      showAlert('success', `Event "${ev.title}" deleted.`);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to delete event: ${err.message}`);
+    }
+  };
+
+  // --- GALLERY MANAGEMENT ACTIONS ---
+  const handleUploadGallery = async (e) => {
+    e.preventDefault();
+    if (!galleryFiles || galleryFiles.length === 0) {
+      showAlert('error', 'Please select at least one photo to upload.');
+      return;
+    }
+
+    setGalleryUploading(true);
+    let successCount = 0;
+
+    try {
+      for (const file of Array.from(galleryFiles)) {
+        const fileExt = file.name.split('.').pop();
+        const storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const storageRef = ref(storage, storagePath);
+
+        const uploadResult = await uploadBytes(storageRef, file);
+        const imageUrl = await getDownloadURL(uploadResult.ref);
+
+        await addDoc(collection(db, 'gallery'), {
+          imageUrl,
+          storagePath,
+          caption: galleryCaption.trim(),
+          uploadedBy: currentUser.email,
+          uploadedAt: serverTimestamp()
+        });
+
+        successCount++;
+      }
+
+      showAlert('success', `${successCount} photo${successCount > 1 ? 's' : ''} uploaded successfully!`);
+      setGalleryFiles([]);
+      setGalleryCaption('');
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to upload photos: ${err.message}`);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const handleUpdateCaption = async (e) => {
+    e.preventDefault();
+    if (!editingPhoto) return;
+
+    try {
+      const photoRef = doc(db, 'gallery', editingPhoto.id);
+      await updateDoc(photoRef, {
+        caption: photoCaptionForm.trim(),
+        updatedBy: currentUser.email,
+        updatedAt: serverTimestamp()
+      });
+      showAlert('success', 'Caption updated successfully!');
+      setEditingPhoto(null);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to update caption: ${err.message}`);
+    }
+  };
+
+  const handleDeleteGalleryItem = async (photo) => {
+    if (!window.confirm('Are you sure you want to delete this photo from the gallery?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'gallery', photo.id));
+
+      if (photo.storagePath) {
+        try {
+          await deleteObject(ref(storage, photo.storagePath));
+        } catch (delErr) {
+          console.warn('Gallery file delete warning:', delErr);
+        }
+      }
+      showAlert('success', 'Photo removed from gallery.');
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to delete photo: ${err.message}`);
+    }
+  };
+
+  const todayStr = getLocalTodayString();
+
+  return (
+    <div className="official-dashboard-wrapper">
+      {/* Top Navigation Bar */}
+      <header className="dashboard-topbar glassmorphism">
+        <div className="topbar-left">
+          <img src={logoImg} alt="MMA Crest" className="dashboard-logo" />
+          <div className="dashboard-title-box">
+            <h2>Official Dashboard</h2>
+            <span className="official-role-badge">
+              <FaUserShield /> {officialName} ({currentUser?.email})
+            </span>
+          </div>
+        </div>
+
+        <div className="topbar-right">
+          <Link to="/" className="topbar-site-btn">
+            <FaExternalLinkAlt /> View Website
+          </Link>
+          <button onClick={handleLogout} className="topbar-logout-btn">
+            <FaSignOutAlt /> Sign Out
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <main className="dashboard-content-container">
+        {/* Alerts */}
+        <AnimatePresence>
+          {alert && (
+            <motion.div 
+              className={`dashboard-alert ${alert.type === 'success' ? 'alert-success' : 'alert-error'}`}
+              initial={{ opacity: 0, y: -15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+            >
+              {alert.type === 'success' ? <FaCheckCircle /> : <FaExclamationTriangle />}
+              <span>{alert.message}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Dashboard Navigation Tabs */}
+        <div className="dashboard-nav-tabs">
+          <button 
+            className={`dash-tab-btn ${activeTab === 'events' ? 'active-dash-tab' : ''}`}
+            onClick={() => setActiveTab('events')}
+          >
+            <FaCalendarAlt /> Event Management ({events.length})
+          </button>
+          
+          <button 
+            className={`dash-tab-btn ${activeTab === 'gallery' ? 'active-dash-tab' : ''}`}
+            onClick={() => setActiveTab('gallery')}
+          >
+            <FaImages /> Gallery Management ({galleryItems.length})
+          </button>
+        </div>
+
+        {/* --- EVENT MANAGEMENT TAB --- */}
+        {activeTab === 'events' && (
+          <section className="dashboard-section">
+            <div className="section-toolbar">
+              <div>
+                <h3>Manage Association Events</h3>
+                <p>Add, update, or remove events. Dates determine Upcoming vs Past status automatically.</p>
+              </div>
+              <button className="btn-primary add-new-btn" onClick={openAddEventModal}>
+                <FaPlus /> Add New Event
+              </button>
+            </div>
+
+            {loadingEvents ? (
+              <div className="dashboard-loading">Loading live events from Firestore...</div>
+            ) : events.length === 0 ? (
+              <div className="empty-dashboard-card glassmorphism">
+                <FaCalendarAlt className="empty-dash-icon" />
+                <h4>No Events in Cloud Database</h4>
+                <p>Click "Add New Event" above to create your first cloud-managed event.</p>
+              </div>
+            ) : (
+              <div className="events-table-card glassmorphism">
+                <div className="table-responsive">
+                  <table className="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>Poster</th>
+                        <th>Event Title</th>
+                        <th>Date</th>
+                        <th>Current Status</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {events.map((ev) => {
+                        const isToday = ev.date === todayStr;
+                        const isUpcoming = ev.date > todayStr;
+                        const isPast = ev.date < todayStr;
+
+                        return (
+                          <tr key={ev.id}>
+                            <td className="poster-td">
+                              {ev.imageUrl ? (
+                                <img src={ev.imageUrl} alt={ev.title} className="table-poster-thumb" />
+                              ) : (
+                                <div className="no-poster-box">
+                                  <FaImage />
+                                </div>
+                              )}
+                            </td>
+                            <td className="title-td">
+                              <strong>{ev.title}</strong>
+                            </td>
+                            <td className="date-td">
+                              <span className="badge-date">
+                                <FaCalendarAlt /> {formatDisplayDate(ev.date)}
+                              </span>
+                            </td>
+                            <td className="status-td">
+                              {isToday && (
+                                <span className="badge-status status-today">
+                                  <FaFire /> HAPPENING TODAY
+                                </span>
+                              )}
+                              {isUpcoming && (
+                                <span className="badge-status status-upcoming">
+                                  <FaHourglassHalf /> UPCOMING
+                                </span>
+                              )}
+                              {isPast && (
+                                <span className="badge-status status-past">
+                                  <FaCheckCircle /> PAST EVENT
+                                </span>
+                              )}
+                            </td>
+                            <td className="desc-td">
+                              <p className="table-desc-text">{ev.description || '—'}</p>
+                            </td>
+                            <td className="actions-td">
+                              <button 
+                                className="action-icon-btn edit-btn" 
+                                onClick={() => openEditEventModal(ev)}
+                                title="Edit Event"
+                              >
+                                <FaEdit /> Edit
+                              </button>
+                              <button 
+                                className="action-icon-btn delete-btn" 
+                                onClick={() => handleDeleteEvent(ev)}
+                                title="Delete Event"
+                              >
+                                <FaTrash />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* --- GALLERY MANAGEMENT TAB --- */}
+        {activeTab === 'gallery' && (
+          <section className="dashboard-section">
+            {/* Upload Box */}
+            <div className="gallery-upload-card glassmorphism">
+              <h3><FaUpload /> Upload Photos to Gallery</h3>
+              <p>Select one or multiple photos to upload directly to Firebase Storage.</p>
+              
+              <form onSubmit={handleUploadGallery} className="gallery-upload-form">
+                <div className="upload-form-grid">
+                  <div className="form-group">
+                    <label>Select Photo(s)</label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      multiple
+                      required
+                      onChange={(e) => setGalleryFiles(e.target.files)}
+                      className="file-input-control"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Caption / Title (Optional)</label>
+                    <input 
+                      type="text"
+                      placeholder="e.g. Match Day Celebration 2026"
+                      value={galleryCaption}
+                      onChange={(e) => setGalleryCaption(e.target.value)}
+                      className="text-input-control"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="btn-primary upload-submit-btn"
+                  disabled={galleryUploading}
+                >
+                  <FaUpload /> {galleryUploading ? 'Uploading to Firebase Storage...' : 'Upload Photos'}
+                </button>
+              </form>
+            </div>
+
+            {/* Existing Uploaded Gallery Grid */}
+            <div className="section-toolbar" style={{ marginTop: '40px' }}>
+              <div>
+                <h3>Cloud Gallery Photos ({galleryItems.length})</h3>
+                <p>Photos uploaded here appear immediately on the public website Gallery.</p>
+              </div>
+            </div>
+
+            {loadingGallery ? (
+              <div className="dashboard-loading">Loading gallery photos from Firestore...</div>
+            ) : galleryItems.length === 0 ? (
+              <div className="empty-dashboard-card glassmorphism">
+                <FaImages className="empty-dash-icon" />
+                <h4>No Cloud Gallery Photos</h4>
+                <p>Use the upload box above to add photos to the live gallery.</p>
+              </div>
+            ) : (
+              <div className="dashboard-gallery-grid">
+                {galleryItems.map((photo) => (
+                  <div key={photo.id} className="dash-gallery-card glassmorphism">
+                    <div className="dash-photo-wrapper">
+                      <img src={photo.imageUrl} alt={photo.caption || 'Gallery photo'} />
+                    </div>
+                    <div className="dash-photo-info">
+                      <p className="photo-caption-text">{photo.caption || 'No caption'}</p>
+                      <span className="photo-uploader-tag">By: {photo.uploadedBy}</span>
+                    </div>
+                    <div className="dash-photo-actions">
+                      <button 
+                        className="action-icon-btn edit-btn"
+                        onClick={() => {
+                          setEditingPhoto(photo);
+                          setPhotoCaptionForm(photo.caption || '');
+                        }}
+                      >
+                        <FaEdit /> Caption
+                      </button>
+                      <button 
+                        className="action-icon-btn delete-btn"
+                        onClick={() => handleDeleteGalleryItem(photo)}
+                      >
+                        <FaTrash /> Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+      </main>
+
+      {/* --- ADD / EDIT EVENT MODAL --- */}
+      <AnimatePresence>
+        {eventModalOpen && (
+          <div className="modal-backdrop">
+            <motion.div 
+              className="dashboard-modal glassmorphism"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <div className="modal-header">
+                <h3>{editingEvent ? 'Edit Event' : 'Add New Event'}</h3>
+                <button className="modal-close-btn" onClick={() => setEventModalOpen(false)}>
+                  <FaTimes />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEvent} className="modal-form">
+                <div className="form-group">
+                  <label>Event Title *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Flag Hosting"
+                    value={eventForm.title}
+                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Event Date (YYYY-MM-DD) *</label>
+                  <input 
+                    type="date"
+                    required
+                    value={eventForm.date}
+                    onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
+                  />
+                  <small className="form-help-text">
+                    The website will automatically calculate Upcoming vs Past status based on the real date.
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea 
+                    rows={4}
+                    placeholder="Provide event details, itinerary, or instructions..."
+                    value={eventForm.description}
+                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Event Poster / Image (Optional)</label>
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setEventFile(e.target.files[0])}
+                  />
+                  {editingEvent?.imageUrl && !eventFile && (
+                    <small className="form-help-text">Current poster is attached. Choose a new file to replace it.</small>
+                  )}
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    type="button" 
+                    className="modal-cancel-btn"
+                    onClick={() => setEventModalOpen(false)}
+                    disabled={eventSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn-primary modal-save-btn"
+                    disabled={eventSaving}
+                  >
+                    {eventSaving ? 'Saving to Firestore...' : editingEvent ? 'Update Event' : 'Create Event'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- EDIT PHOTO CAPTION MODAL --- */}
+      <AnimatePresence>
+        {editingPhoto && (
+          <div className="modal-backdrop">
+            <motion.div 
+              className="dashboard-modal glassmorphism"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <div className="modal-header">
+                <h3>Edit Photo Caption</h3>
+                <button className="modal-close-btn" onClick={() => setEditingPhoto(null)}>
+                  <FaTimes />
+                </button>
+              </div>
+
+              <form onSubmit={handleUpdateCaption} className="modal-form">
+                <div className="caption-preview-box">
+                  <img src={editingPhoto.imageUrl} alt="Preview" />
+                </div>
+
+                <div className="form-group">
+                  <label>Caption</label>
+                  <input 
+                    type="text"
+                    placeholder="Enter caption..."
+                    value={photoCaptionForm}
+                    onChange={(e) => setPhotoCaptionForm(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    type="button" 
+                    className="modal-cancel-btn"
+                    onClick={() => setEditingPhoto(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn-primary modal-save-btn"
+                  >
+                    Save Caption
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default OfficialDashboard;

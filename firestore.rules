@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Function to verify if request is authenticated as one of the 3 authorized officials
+    function isAuthorizedOfficial() {
+      return request.auth != null &&
+             request.auth.token.email != null &&
+             (
+               request.auth.token.email.lower() == 'sm429113@gmail.com' ||
+               request.auth.token.email.lower() == 'banerjeearkya@gmail.com' ||
+               request.auth.token.email.lower() == 'arnabinsky@gmail.com'
+             );
+    }
+
+    // Events Collection: Public can view, only authorized officials can write/edit/delete
+    match /events/{eventId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedOfficial();
+    }
+
+    // Gallery Collection: Public can view, only authorized officials can write/edit/delete
+    match /gallery/{imageId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedOfficial();
+    }
+
+    // Fallback: Deny all other collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { 
   FaChevronLeft, 
   FaChevronRight, 
@@ -14,8 +16,61 @@ const Gallery = ({ data }) => {
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [visibleCount, setVisibleCount] = useState(16);
+  const [cloudPhotos, setCloudPhotos] = useState([]);
 
-  // New Categories requested by the user
+  // Subscribe to Cloud Firestore live gallery items
+  useEffect(() => {
+    try {
+      const galleryRef = collection(db, 'gallery');
+      const q = query(galleryRef, orderBy('uploadedAt', 'desc'));
+
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        if (!snapshot.empty) {
+          const items = snapshot.docs.map(doc => ({
+            id: `cloud-${doc.id}`,
+            ...doc.data(),
+            isCloud: true
+          }));
+          setCloudPhotos(items);
+        } else {
+          setCloudPhotos([]);
+        }
+      }, (err) => {
+        console.warn('Firestore gallery listener notice:', err);
+      });
+
+      return unsubscribe;
+    } catch (e) {
+      console.warn('Could not connect to Firestore gallery collection:', e);
+    }
+  }, []);
+
+  // Merge cloud uploaded photos (at top) with base static gallery images
+  const baseImages = (data?.images || []).map((img, idx) => ({
+    ...img,
+    id: img.id || `static-${idx}`
+  }));
+
+  const allGalleryImages = [...cloudPhotos, ...baseImages];
+
+  // Helper to resolve image URL (cloud URL vs local asset)
+  const getImageUrl = (img) => {
+    if (img.imageUrl) return img.imageUrl;
+    if (img.fileName) return `${import.meta.env.BASE_URL}gallery/${img.fileName}`;
+    return '';
+  };
+
+  // Helper to resolve title / caption
+  const getImageTitle = (img) => {
+    return img.caption || img.title || 'Magra Mariners Association';
+  };
+
+  // Helper to resolve description
+  const getImageDesc = (img) => {
+    return img.description || img.caption || 'Captured moment from Magra Mariners Association activities.';
+  };
+
+  // Categories
   const categories = [
     { key: 'all', label: 'All Memories' },
     { key: 'social-welfare', label: 'Social Welfare Activities' },
@@ -24,8 +79,8 @@ const Gallery = ({ data }) => {
   ];
 
   // Filtered list
-  const filteredImages = data.images.filter(
-    (img) => selectedCategory === 'all' || img.category === selectedCategory
+  const filteredImages = allGalleryImages.filter(
+    (img) => selectedCategory === 'all' || img.category === selectedCategory || (img.isCloud && selectedCategory === 'all')
   );
 
   const visibleImages = filteredImages.slice(0, visibleCount);
@@ -125,8 +180,8 @@ const Gallery = ({ data }) => {
                   <div className="gallery-card glassmorphism">
                     <div className="gallery-img-container">
                       <img 
-                        src={`${import.meta.env.BASE_URL}gallery/${image.fileName}`} 
-                        alt={image.title} 
+                        src={getImageUrl(image)} 
+                        alt={getImageTitle(image)} 
                         className="gallery-img"
                         loading="lazy" 
                       />
@@ -218,13 +273,13 @@ const Gallery = ({ data }) => {
               onClick={(e) => e.stopPropagation()}
             >
               <img 
-                src={`${import.meta.env.BASE_URL}gallery/${filteredImages[activeImageIndex].fileName}`} 
-                alt={filteredImages[activeImageIndex].title} 
+                src={getImageUrl(filteredImages[activeImageIndex])} 
+                alt={getImageTitle(filteredImages[activeImageIndex])} 
                 className="lightbox-img"
               />
               <div className="lightbox-caption glassmorphism">
-                <h3>{filteredImages[activeImageIndex].title}</h3>
-                <p>{filteredImages[activeImageIndex].description}</p>
+                <h3>{getImageTitle(filteredImages[activeImageIndex])}</h3>
+                <p>{getImageDesc(filteredImages[activeImageIndex])}</p>
               </div>
             </motion.div>
           </motion.div>

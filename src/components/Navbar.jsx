@@ -60,6 +60,11 @@ const Navbar = ({ navLinks = [] }) => {
               </NavLink>
             </li>
           ))}
+          <li className="navbar-item">
+            <Link to="/login" className="navbar-official-btn">
+              Official Portal
+            </Link>
+          </li>
         </ul>
 
         {/* Mobile Menu Action (Hamburger Icon) */}
@@ -88,6 +93,15 @@ const Navbar = ({ navLinks = [] }) => {
               </NavLink>
             </li>
           ))}
+          <li className="navbar-item-mobile" style={{ marginTop: '10px' }}>
+            <Link 
+              to="/login" 
+              className="navbar-link-mobile official-mobile-link"
+              onClick={() => setIsOpen(false)}
+            >
+              🔒 Official Portal
+            </Link>
+          </li>
         </ul>
       </div>
     </nav>

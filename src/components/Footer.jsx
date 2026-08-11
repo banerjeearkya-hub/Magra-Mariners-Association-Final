@@ -38,6 +38,11 @@ const Footer = ({ logo, navLinks = [] }) => {
                 <Link to={link.href}>{link.label}</Link>
               </li>
             ))}
+            <li>
+              <Link to="/login" style={{ color: 'var(--color-accent)', fontWeight: '700' }}>
+                🔒 Official Portal
+              </Link>
+            </li>
           </ul>
         </div>
 
