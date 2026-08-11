@@ -47,6 +47,8 @@ const OfficialLogin = () => {
       console.error(err);
       if (err.message.includes('Access Denied')) {
         setError(err.message);
+      } else if (err.code === 'auth/api-key-not-valid' || err.message?.includes('api-key-not-valid')) {
+        setError('Firebase API Key not configured yet. Please provide your Firebase project config from Firebase Console.');
       } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
         setError('Invalid official credentials. Please check your email and password.');
       } else if (err.code === 'auth/too-many-requests') {
