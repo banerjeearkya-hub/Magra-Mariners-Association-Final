@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Timeline, Tag } from 'antd';
 import { 
   FaCalendarAlt, 
-  FaClock, 
-  FaMapMarkerAlt, 
   FaCheckCircle, 
   FaHourglassHalf, 
   FaCalendarTimes, 
@@ -268,22 +266,6 @@ const Events = ({ data }) => {
                               </Tag>
                             )}
                           </div>
-
-                          {/* Event Meta Info: Time & Venue */}
-                          {(item.time || item.venue) && (
-                            <div className="event-meta-row">
-                              {item.time && (
-                                <span className="event-meta-item">
-                                  <FaClock className="meta-icon" /> {item.time}
-                                </span>
-                              )}
-                              {item.venue && (
-                                <span className="event-meta-item">
-                                  <FaMapMarkerAlt className="meta-icon" /> {item.venue}
-                                </span>
-                              )}
-                            </div>
-                          )}
 
                           {/* Event Poster / Image */}
                           {item.image && (

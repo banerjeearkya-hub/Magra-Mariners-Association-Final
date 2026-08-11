@@ -1463,40 +1463,24 @@ export const siteData = {
         id: "1",
         title: "Under-13 Football Tournament",
         date: "2026-07-26",
-        time: "9:00 AM - 5:00 PM",
-        venue: "Digsui High School Ground, Magra",
         description: "A tournament of 4 teams under 13 years of age, promoting grassroots football in the region."
       },
       {
         id: "2",
         title: "Mohun Bagan Foundation Day Fan Meet",
         date: "2026-08-10",
-        time: "5:00 PM",
-        venue: "MMA Clubhouse, Magra",
         description: "Celebrating Mohun Bagan Foundation Day with club flag hoisting and community gathering."
       },
       {
         id: "3",
-        title: "Durand Cup Live Screening & Gathering",
-        date: "2026-08-11",
-        time: "6:30 PM",
-        venue: "MMA Clubhouse, Magra",
-        description: "Live match screening on the big screen with Mariners cheering together in Green & Maroon."
+        title: "Flag Hosting",
+        date: "2026-08-15",
+        description: "Annual Independence Day flag hosting ceremony to celebrate the national spirit with fellow Mariners."
       },
       {
         id: "4",
-        title: "Independence Day Friendly Match & Flag Hoisting",
-        date: "2026-08-15",
-        time: "8:00 AM - 12:00 PM",
-        venue: "Digsui Football Ground, Magra",
-        description: "Annual Independence Day flag hoisting ceremony followed by a friendly exhibition match."
-      },
-      {
-        id: "5",
         title: "Annual Voluntary Blood Donation Camp",
         date: "2026-10-04",
-        time: "10:00 AM - 3:30 PM",
-        venue: "MMA Clubhouse, Station Road, Magra",
         description: "Annual community blood donation initiative held at the MMA Clubhouse in partnership with local blood banks."
       }
     ]
