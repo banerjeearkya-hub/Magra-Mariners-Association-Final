@@ -61,6 +61,7 @@ const OfficialDashboard = () => {
   const [eventForm, setEventForm] = useState({ title: '', date: '', description: '' });
   const [eventFile, setEventFile] = useState(null);
   const [eventSaving, setEventSaving] = useState(false);
+  const [modalError, setModalError] = useState('');
 
   // Gallery Upload State
   const [galleryFiles, setGalleryFiles] = useState([]);
@@ -77,6 +78,23 @@ const OfficialDashboard = () => {
   const showAlert = (type, message) => {
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 5000);
+  };
+
+  // Promise with safety timeout helper
+  const withTimeout = (promise, ms = 8000, errorMsg = 'Operation timed out') => {
+    let timer;
+    const timeoutPromise = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        reject(new Error(errorMsg));
+      }, ms);
+    });
+    return Promise.race([
+      promise.then((res) => {
+        clearTimeout(timer);
+        return res;
+      }),
+      timeoutPromise
+    ]);
   };
 
   // Enforce official authentication
@@ -178,6 +196,7 @@ const OfficialDashboard = () => {
     setEditingEvent(null);
     setEventForm({ title: '', date: getLocalTodayString(), description: '' });
     setEventFile(null);
+    setModalError('');
     setEventModalOpen(true);
   };
 
@@ -189,13 +208,15 @@ const OfficialDashboard = () => {
       description: ev.description || ''
     });
     setEventFile(null);
+    setModalError('');
     setEventModalOpen(true);
   };
 
   const handleSaveEvent = async (e) => {
     e.preventDefault();
+    setModalError('');
     if (!eventForm.title.trim() || !eventForm.date.trim()) {
-      showAlert('error', 'Event title and date are required.');
+      setModalError('Event title and date are required.');
       return;
     }
 
@@ -210,7 +231,11 @@ const OfficialDashboard = () => {
         const fileName = `events/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const storageRef = ref(storage, fileName);
         
-        const uploadResult = await uploadBytes(storageRef, eventFile);
+        const uploadResult = await withTimeout(
+          uploadBytes(storageRef, eventFile),
+          10000,
+          'Firebase Storage upload timed out. Ensure Firebase Storage is enabled in Firebase Console.'
+        );
         imageUrl = await getDownloadURL(uploadResult.ref);
         storagePath = fileName;
 
@@ -237,20 +262,32 @@ const OfficialDashboard = () => {
       if (editingEvent) {
         // Update existing event
         const eventDocRef = doc(db, 'events', editingEvent.id);
-        await updateDoc(eventDocRef, eventPayload);
+        await withTimeout(
+          updateDoc(eventDocRef, eventPayload),
+          8000,
+          'Unable to reach Firestore database. Please verify Firestore Database is created in Firebase Console.'
+        );
         showAlert('success', `Event "${eventForm.title}" updated successfully!`);
       } else {
         // Add new event
         eventPayload.createdBy = currentUser.email;
         eventPayload.createdAt = serverTimestamp();
-        await addDoc(collection(db, 'events'), eventPayload);
+        await withTimeout(
+          addDoc(collection(db, 'events'), eventPayload),
+          8000,
+          'Unable to reach Firestore database. Please make sure Firestore Database is created and active in your Firebase Console (Build > Firestore Database > Create Database).'
+        );
         showAlert('success', `Event "${eventForm.title}" added successfully!`);
       }
 
       setEventModalOpen(false);
     } catch (err) {
       console.error(err);
-      showAlert('error', `Failed to save event: ${err.message}`);
+      const errMsg = err.message.includes('permission-denied')
+        ? 'Permission Denied: Please publish the Firestore Security Rules in Firebase Console.'
+        : err.message;
+      setModalError(errMsg);
+      showAlert('error', `Failed to save event: ${errMsg}`);
     } finally {
       setEventSaving(false);
     }
@@ -295,16 +332,24 @@ const OfficialDashboard = () => {
         const storagePath = `gallery/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const storageRef = ref(storage, storagePath);
 
-        const uploadResult = await uploadBytes(storageRef, file);
+        const uploadResult = await withTimeout(
+          uploadBytes(storageRef, file),
+          12000,
+          'Firebase Storage upload timed out. Ensure Firebase Storage is enabled in Firebase Console.'
+        );
         const imageUrl = await getDownloadURL(uploadResult.ref);
 
-        await addDoc(collection(db, 'gallery'), {
-          imageUrl,
-          storagePath,
-          caption: galleryCaption.trim(),
-          uploadedBy: currentUser.email,
-          uploadedAt: serverTimestamp()
-        });
+        await withTimeout(
+          addDoc(collection(db, 'gallery'), {
+            imageUrl,
+            storagePath,
+            caption: galleryCaption.trim(),
+            uploadedBy: currentUser.email,
+            uploadedAt: serverTimestamp()
+          }),
+          8000,
+          'Failed to record photo in Firestore. Ensure Firestore Database is created in Firebase Console.'
+        );
 
         successCount++;
       }
@@ -326,11 +371,15 @@ const OfficialDashboard = () => {
 
     try {
       const photoRef = doc(db, 'gallery', editingPhoto.id);
-      await updateDoc(photoRef, {
-        caption: photoCaptionForm.trim(),
-        updatedBy: currentUser.email,
-        updatedAt: serverTimestamp()
-      });
+      await withTimeout(
+        updateDoc(photoRef, {
+          caption: photoCaptionForm.trim(),
+          updatedBy: currentUser.email,
+          updatedAt: serverTimestamp()
+        }),
+        8000,
+        'Failed to update caption in Firestore.'
+      );
       showAlert('success', 'Caption updated successfully!');
       setEditingPhoto(null);
     } catch (err) {
@@ -343,7 +392,11 @@ const OfficialDashboard = () => {
     if (!window.confirm('Are you sure you want to delete this photo from the gallery?')) return;
 
     try {
-      await deleteDoc(doc(db, 'gallery', photo.id));
+      await withTimeout(
+        deleteDoc(doc(db, 'gallery', photo.id)),
+        8000,
+        'Failed to delete photo document from Firestore.'
+      );
 
       if (photo.storagePath) {
         try {
@@ -650,6 +703,13 @@ const OfficialDashboard = () => {
                   <FaTimes />
                 </button>
               </div>
+
+              {modalError && (
+                <div className="alert-box alert-error" style={{ margin: '0 0 15px 0' }}>
+                  <FaExclamationTriangle className="alert-icon" />
+                  <span>{modalError}</span>
+                </div>
+              )}
 
               <form onSubmit={handleSaveEvent} className="modal-form">
                 <div className="form-group">
