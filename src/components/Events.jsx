@@ -148,7 +148,6 @@ const Events = ({ data }) => {
             onClick={() => setActiveTab('upcoming')}
           >
             Upcoming Events
-            <span className="tab-count-badge">{upcomingEvents.length}</span>
           </button>
           
           <button 
@@ -156,7 +155,6 @@ const Events = ({ data }) => {
             onClick={() => setActiveTab('past')}
           >
             Past Events
-            <span className="tab-count-badge">{pastEvents.length}</span>
           </button>
 
           <button 
@@ -164,7 +162,6 @@ const Events = ({ data }) => {
             onClick={() => setActiveTab('all')}
           >
             All Events
-            <span className="tab-count-badge">{allEvents.length}</span>
           </button>
         </div>
 
