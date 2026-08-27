@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Function to verify if request is authenticated as one of the authorized officials
+    // Function to verify if request is authenticated as one of the 3 authorized officials
     function isAuthorizedOfficial() {
       return request.auth != null &&
              request.auth.token.email != null &&
@@ -25,11 +25,9 @@ service cloud.firestore {
       allow create, update, delete: if isAuthorizedOfficial();
     }
 
-    // Members Collection: Public/Authenticated can register (create) & check status (read), only authorized admins can update/delete
+    // Members Directory: Only authorized officials can view/manage
     match /members/{memberId} {
-      allow read: if true;
-      allow create: if true;
-      allow update, delete: if isAuthorizedOfficial();
+      allow read, create, update, delete: if isAuthorizedOfficial();
     }
 
     // Activity & Audit Logs Collection: Strictly Append-Only (Immutable)

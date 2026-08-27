@@ -964,13 +964,6 @@ const OfficialDashboard = () => {
           >
             <FaUsersCog /> Users & Access ({adminUsers.length})
           </button>
-
-          <button 
-            className={`dash-tab-btn ${activeTab === 'members' ? 'active' : ''}`}
-            onClick={() => setActiveTab('members')}
-          >
-            <FaUserCheck /> Member Database & Cashier ({members.length})
-          </button>
         </nav>
 
         {/* ======================================================== */}
@@ -1534,98 +1527,6 @@ const OfficialDashboard = () => {
           </section>
         )}
 
-        {/* ======================================================== */}
-        {/* TAB 6: MEMBER APPLICATION VERIFICATIONS (ADMIN)          */}
-        {/* ======================================================== */}
-        {activeTab === 'members' && (
-          <section className="dash-section">
-            <div className="section-toolbar">
-              <div>
-                <h3>Admin Member Application Verifications</h3>
-                <p>Review member registration applications and manually Verify or Reject pending requests.</p>
-              </div>
-            </div>
-
-            {loadingMembers ? (
-              <div className="dashboard-loading">Loading member applications from Cloud Firestore...</div>
-            ) : members.length === 0 ? (
-              <div className="empty-dashboard-card glassmorphism">
-                <FaUserCheck className="empty-dash-icon" />
-                <h4>No Member Applications Registered</h4>
-                <p>Member registration applications submitted via the Member Portal will appear here.</p>
-              </div>
-            ) : (
-              <div className="table-responsive glassmorphism">
-                <table className="dashboard-table">
-                  <thead>
-                    <tr>
-                      <th>Applicant Name</th>
-                      <th>Mobile Number</th>
-                      <th>Registration Date</th>
-                      <th>Verification Status</th>
-                      <th>Admin Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {members.map((mem) => {
-                      const mob = mem.mobileNumber || mem.mobile || 'N/A';
-                      const regDate = mem.createdAt?.toDate 
-                        ? mem.createdAt.toDate().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-                        : (mem.createdAtIso ? new Date(mem.createdAtIso).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent');
-
-                      const memStatus = mem.status || 'Pending Verification';
-
-                      return (
-                        <tr key={mem.id}>
-                          <td><strong>{mem.name}</strong></td>
-                          <td><span className="mobile-pill"><FaMobileAlt /> {mob}</span></td>
-                          <td><span className="log-date-text">{regDate}</span></td>
-                          <td>
-                            {memStatus === 'Pending Verification' && (
-                              <span className="badge-status status-upcoming"><FaClock /> PENDING VERIFICATION</span>
-                            )}
-                            {memStatus === 'Verified' && (
-                              <span className="badge-status status-today"><FaCheckCircle /> VERIFIED</span>
-                            )}
-                            {memStatus === 'Rejected' && (
-                              <span className="badge-status status-past"><FaTimesCircle /> REJECTED</span>
-                            )}
-                          </td>
-                          <td className="actions-td">
-                            <button 
-                              className="action-icon-btn edit-btn"
-                              onClick={() => handleVerifyMember(mem)}
-                              title="Verify Member Application"
-                            >
-                              <FaCheckCircle /> Verify
-                            </button>
-
-                            <button 
-                              className="action-icon-btn delete-btn"
-                              onClick={() => handleRejectMember(mem)}
-                              title="Reject Member Application"
-                              style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.35)', color: '#f87171' }}
-                            >
-                              <FaTimesCircle /> Reject
-                            </button>
-
-                            <button 
-                              className="action-icon-btn delete-btn"
-                              onClick={() => handleDeleteMember(mem)}
-                              title="Delete Record"
-                            >
-                              <FaTrash />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
       </main>
 
       {/* --- ADD / EDIT EVENT MODAL --- */}

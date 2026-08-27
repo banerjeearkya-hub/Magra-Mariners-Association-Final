@@ -1,23 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaImage, FaRedo, FaExclamationCircle } from 'react-icons/fa';
+import { FaImage, FaRedo } from 'react-icons/fa';
 import './SafeImage.css';
 
 /**
  * SafeImage Component
- * Prevents infinite loading and handles unavailable, broken, deleted, or slow images gracefully.
+ * Prevents infinite loading, auto-recovers gallery paths, and handles image load failures gracefully.
  */
 const SafeImage = ({
   src,
   alt = 'Image',
   className = '',
   containerClassName = '',
-  fallbackText = 'Image unavailable',
-  timeoutMs = 6000,
-  showRetry = false,
+  fallbackText = 'Photo unavailable',
+  timeoutMs = 15000, // Increased timeout to 15s for slow mobile networks
+  showRetry = true,
   onClick,
   loading = 'lazy'
 }) => {
   const [status, setStatus] = useState('loading'); // 'loading' | 'loaded' | 'error'
+  const [currentSrc, setCurrentSrc] = useState(src);
   const [retryCount, setRetryCount] = useState(0);
   const timerRef = useRef(null);
 
@@ -27,9 +28,9 @@ const SafeImage = ({
       return;
     }
 
+    setCurrentSrc(src);
     setStatus('loading');
 
-    // Timeout safety fallback: if image doesn't load within timeoutMs, mark as error
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setStatus((currentStatus) => (currentStatus === 'loading' ? 'error' : currentStatus));
@@ -47,13 +48,29 @@ const SafeImage = ({
 
   const handleError = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
+
+    // Path recovery attempt for relative gallery paths
+    if (currentSrc && typeof currentSrc === 'string' && !currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
+      if (currentSrc.startsWith('./')) {
+        const altPath = currentSrc.replace(/^\.\//, '');
+        setCurrentSrc(altPath);
+        return;
+      }
+      if (currentSrc.startsWith('/')) {
+        const altPath = `.${currentSrc}`;
+        setCurrentSrc(altPath);
+        return;
+      }
+    }
+
     setStatus('error');
   };
 
   const handleRetry = (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     if (retryCount < 3) {
       setStatus('loading');
+      setCurrentSrc(src);
       setRetryCount((prev) => prev + 1);
     }
   };
@@ -71,10 +88,10 @@ const SafeImage = ({
       )}
 
       {/* Actual Image */}
-      {src && status !== 'error' && (
+      {currentSrc && status !== 'error' && (
         <img
-          key={`${src}-${retryCount}`}
-          src={src}
+          key={`${currentSrc}-${retryCount}`}
+          src={currentSrc}
           alt={alt}
           className={`safe-image-img ${className} ${status === 'loaded' ? 'image-visible' : 'image-hidden'}`}
           onLoad={handleLoad}
@@ -93,7 +110,7 @@ const SafeImage = ({
               type="button" 
               className="fallback-retry-btn" 
               onClick={handleRetry}
-              title="Retry loading image"
+              title="Retry loading photo"
             >
               <FaRedo className="retry-icon" /> Retry
             </button>

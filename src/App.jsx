@@ -31,17 +31,13 @@ import ScrollToTopRoute from './components/ScrollToTopRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfficialLogin from './components/OfficialLogin';
 import OfficialDashboard from './components/OfficialDashboard';
-import MemberPortal from './components/MemberPortal';
 
 // Layout wrapper to conditionally render public navbar/footer
 const AppLayout = ({ navLinks }) => {
   const location = useLocation();
   const isStandalonePortal = 
     location.pathname === '/login' || 
-    location.pathname === '/dashboard' ||
-    location.pathname === '/member-portal' ||
-    location.pathname === '/member-login' ||
-    location.pathname === '/member-dashboard';
+    location.pathname === '/dashboard';
 
   return (
     <>
@@ -87,11 +83,6 @@ const AppLayout = ({ navLinks }) => {
               <SocialFollow />
             </>
           } />
-
-          {/* Member Registration & Verification Portal */}
-          <Route path="/member-portal" element={<MemberPortal />} />
-          <Route path="/member-login" element={<MemberPortal />} />
-          <Route path="/member-dashboard" element={<MemberPortal />} />
 
           {/* Official Authentication Portal */}
           <Route path="/login" element={<OfficialLogin />} />

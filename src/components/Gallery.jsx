@@ -65,10 +65,17 @@ const Gallery = ({ data }) => {
 
   const allGalleryImages = [...cloudPhotos, ...baseImages];
 
-  // Helper to resolve image URL (cloud URL vs local asset)
+  // Helper to resolve image URL (cloud URL vs local public asset)
   const getImageUrl = (img) => {
+    if (!img) return '';
     if (img.imageUrl) return img.imageUrl;
-    if (img.fileName) return `${import.meta.env.BASE_URL}gallery/${img.fileName}`;
+    if (img.url) return img.url;
+    if (img.src) return img.src;
+    if (img.fileName) {
+      const base = import.meta.env.BASE_URL || './';
+      const cleanBase = base.endsWith('/') ? base : `${base}/`;
+      return `${cleanBase}gallery/${img.fileName}`;
+    }
     return '';
   };
 
