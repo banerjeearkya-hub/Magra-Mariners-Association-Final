@@ -31,6 +31,11 @@ service cloud.firestore {
       allow update, delete: if isAuthorizedOfficial();
     }
 
+    // OTP Sessions Collection: Public access for OTP generation and verification sessions
+    match /otpSessions/{sessionId} {
+      allow read, create, update, delete: if true;
+    }
+
     // Activity & Audit Logs Collection: Strictly Append-Only (Immutable)
     match /activityLogs/{logId} {
       allow read: if isAuthorizedOfficial();

@@ -27,6 +27,7 @@ import {
   FaIdCard
 } from 'react-icons/fa';
 import { auth, db } from '../firebase/config';
+import { sendMemberOTP, verifyMemberOTP, normalizeMobileNumber } from '../services/otpService';
 import logoImg from '../assets/logo.png';
 import './MemberPortal.css';
 
@@ -121,7 +122,7 @@ const MemberPortal = () => {
       return;
     }
 
-    const formattedMobile = formatMobileNumber(regMobile);
+    const formattedMobile = normalizeMobileNumber(regMobile);
     setLoading(true);
 
     try {
@@ -139,21 +140,16 @@ const MemberPortal = () => {
         return;
       }
 
-      // 2. Trigger Firebase Phone Auth SMS OTP
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(auth, formattedMobile, appVerifier);
-      setConfirmationResult(confirmation);
+      // 2. Trigger Real Random OTP Engine
+      const res = await sendMemberOTP(formattedMobile);
+      setConfirmationResult(res.confirmationResult);
 
-      setCooldown(30); // 30s resend timer
-      setSuccessMsg(`OTP sent to ${formattedMobile}. (If SMS is delayed by carrier DND, enter test OTP: 123456)`);
+      setCooldown(45); // 45s resend cooldown timer
+      setSuccessMsg(`OTP sent to ${formattedMobile}. Please check your phone for the 6-digit verification code.`);
       setStep(2);
     } catch (err) {
-      console.warn('Phone Auth Notice:', err);
-      // Fallback path for testing/dev environment
-      setCooldown(30);
-      setSuccessMsg(`Enter OTP sent to your mobile number ${formattedMobile} (Default: 123456)`);
-      setStep(2);
+      console.error('OTP Send Error:', err);
+      setError('Unable to send OTP: ' + (err.message || 'Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -171,7 +167,7 @@ const MemberPortal = () => {
       return;
     }
 
-    const formattedMobile = formatMobileNumber(loginMobile);
+    const formattedMobile = normalizeMobileNumber(loginMobile);
     setLoading(true);
 
     try {
@@ -188,7 +184,7 @@ const MemberPortal = () => {
         const matchedDoc = snapshot.docs[0];
         foundMember = { id: matchedDoc.id, ...matchedDoc.data() };
       } else if (cleanedDigits.includes('9475083599') || cleanedDigits.includes('9876543210')) {
-        // Fallback default member record
+        // Pre-seeded fallback default member record
         foundMember = {
           id: 'subhankar-default-doc',
           name: 'Subhankar Banerjee',
@@ -205,20 +201,16 @@ const MemberPortal = () => {
 
       setMemberData(foundMember);
 
-      // Trigger OTP
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(auth, formattedMobile, appVerifier);
-      setConfirmationResult(confirmation);
+      // Trigger Real Random OTP Engine
+      const res = await sendMemberOTP(formattedMobile);
+      setConfirmationResult(res.confirmationResult);
 
-      setCooldown(30);
-      setSuccessMsg(`OTP sent to ${formattedMobile}. (If SMS is delayed by carrier DND, enter test OTP: 123456)`);
+      setCooldown(45);
+      setSuccessMsg(`OTP sent to ${formattedMobile}. Please enter the 6-digit verification code.`);
       setStep(2);
     } catch (err) {
-      console.warn('Login Phone Auth Notice:', err);
-      setCooldown(30);
-      setSuccessMsg(`Enter OTP sent to your mobile number ${formattedMobile} (Default: 123456)`);
-      setStep(2);
+      console.error('Login OTP Error:', err);
+      setError('Unable to send OTP: ' + (err.message || 'Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -230,58 +222,47 @@ const MemberPortal = () => {
     setError('');
 
     if (!otpInput || otpInput.trim().length < 4) {
-      setError('Please enter the OTP received on your mobile phone.');
+      setError('Please enter the 6-digit OTP code received on your mobile phone.');
       return;
     }
 
     setLoading(true);
 
     try {
-      let isVerified = false;
+      const targetMobile = activeTab === 'register' ? regMobile : loginMobile;
+      const formattedMobile = normalizeMobileNumber(targetMobile);
 
-      if (confirmationResult) {
-        try {
-          await confirmationResult.confirm(otpInput.trim());
-          isVerified = true;
-        } catch (otpErr) {
-          console.warn('OTP confirmation error:', otpErr);
-        }
-      }
+      // Verify OTP against active Cloud Firestore session / Firebase Auth
+      await verifyMemberOTP(formattedMobile, otpInput, confirmationResult);
 
-      // If OTP verified or fallback match
-      if (isVerified || otpInput.trim() === '123456' || otpInput.trim().length >= 4) {
-        if (activeTab === 'register') {
-          // SAVE VERIFIED MEMBER IN FIRESTORE ONLY AFTER SUCCESSFUL OTP VERIFICATION
-          const formattedMobile = formatMobileNumber(regMobile);
-          const newMemberPayload = {
-            name: regName.trim(),
-            mobileNumber: formattedMobile,
-            mobileVerified: true,
-            otpVerified: true,
-            status: 'Pending Verification',
-            createdAt: serverTimestamp(),
-            createdAtIso: new Date().toISOString(),
-            verifiedAt: null,
-            verifiedBy: null
-          };
+      if (activeTab === 'register') {
+        // SAVE VERIFIED MEMBER IN FIRESTORE ONLY AFTER SUCCESSFUL OTP VERIFICATION
+        const newMemberPayload = {
+          name: regName.trim(),
+          mobileNumber: formattedMobile,
+          mobileVerified: true,
+          otpVerified: true,
+          status: 'Pending Verification',
+          createdAt: serverTimestamp(),
+          createdAtIso: new Date().toISOString(),
+          verifiedAt: null,
+          verifiedBy: null
+        };
 
-          const docRef = await addDoc(collection(db, 'members'), newMemberPayload);
-          const createdMember = { id: docRef.id, ...newMemberPayload };
+        const docRef = await addDoc(collection(db, 'members'), newMemberPayload);
+        const createdMember = { id: docRef.id, ...newMemberPayload };
 
-          setMemberData(createdMember);
-          setSuccessMsg('Registration successful. Your application is pending admin verification.');
-          setStep(3);
-        } else {
-          // LOGIN COMPLETED
-          setSuccessMsg('Login successful!');
-          setStep(3);
-        }
+        setMemberData(createdMember);
+        setSuccessMsg('Registration successful. Your application is pending admin verification.');
+        setStep(3);
       } else {
-        setError('Invalid OTP code. Please check your SMS and try again.');
+        // LOGIN COMPLETED
+        setSuccessMsg('Login successful!');
+        setStep(3);
       }
     } catch (err) {
-      console.error(err);
-      setError('Failed to verify OTP: ' + (err.message || 'Invalid code'));
+      console.error('OTP Verification Failure:', err);
+      setError(err.message || 'Invalid OTP code. Please check and try again.');
     } finally {
       setLoading(false);
     }
@@ -292,19 +273,17 @@ const MemberPortal = () => {
     setError('');
     setSuccessMsg('');
     const targetMobile = activeTab === 'register' ? regMobile : loginMobile;
-    const formattedMobile = formatMobileNumber(targetMobile);
+    const formattedMobile = normalizeMobileNumber(targetMobile);
 
     setLoading(true);
     try {
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
-      const confirmation = await signInWithPhoneNumber(auth, formattedMobile, appVerifier);
-      setConfirmationResult(confirmation);
-      setCooldown(30);
-      setSuccessMsg(`New OTP sent to ${formattedMobile}`);
+      const res = await sendMemberOTP(formattedMobile);
+      setConfirmationResult(res.confirmationResult);
+      setCooldown(45);
+      setSuccessMsg(`A fresh 6-digit OTP code has been sent to ${formattedMobile}`);
     } catch (err) {
-      setCooldown(30);
-      setSuccessMsg(`Resent OTP to ${formattedMobile}`);
+      console.error('Resend OTP Error:', err);
+      setError('Unable to resend OTP: ' + (err.message || 'Please try again.'));
     } finally {
       setLoading(false);
     }
