@@ -110,28 +110,37 @@ export const siteData = {
     images: Object.entries(import.meta.glob('../assets/gallery/*.jpg', { eager: true, import: 'default' }))
       .map(([path, assetUrl], idx) => {
         const fileName = path.split('/').pop();
-        const num = parseInt(fileName.replace('gallery_img_', '').replace('.jpg', ''), 10) || (idx + 1);
-
+        let title = 'Association Memory';
         let category = 'match-day';
-        if ([9, 10, 16, 20, 24, 28, 35, 42, 50, 65, 80, 95].includes(num)) {
-          category = 'blood-donation';
-        } else if ([5, 12, 18, 25, 30, 40, 55, 70, 85, 100].includes(num)) {
+        let description = 'Captured moment from Magra Mariners Association activities.';
+
+        if (fileName.startsWith('brochure_page_')) {
+          const pageNum = fileName.replace('brochure_page_', '').replace('.jpg', '');
+          title = `Official Brochure - Page ${pageNum}`;
           category = 'social-welfare';
+          description = `Official Association Brochure document page ${pageNum}.`;
+        } else if (fileName.startsWith('page_')) {
+          title = `Brochure Feature Photo (${fileName.replace('.jpg', '')})`;
+          category = 'match-day';
+          description = 'Extracted memory photo from the official Magra Mariners Association brochure.';
+        } else {
+          const num = parseInt(fileName.replace('gallery_img_', '').replace('.jpg', ''), 10) || (idx + 1);
+          title = `Association Memory #${num}`;
+          if ([9, 10, 16, 20, 24, 28, 35, 42, 50, 65, 80, 95].includes(num)) {
+            category = 'blood-donation';
+          } else if ([5, 12, 18, 25, 30, 40, 55, 70, 85, 100].includes(num)) {
+            category = 'social-welfare';
+          }
         }
 
         return {
-          id: `g_img_${num}`,
+          id: `g_img_${idx}_${fileName.replace(/[^a-zA-Z0-9]/g, '_')}`,
           fileName,
           imageUrl: assetUrl,
           category,
-          title: `Association Memory #${num}`,
-          description: `Captured moment from Magra Mariners Association activities.`
+          title,
+          description
         };
-      })
-      .sort((a, b) => {
-        const numA = parseInt(a.fileName.replace('gallery_img_', '').replace('.jpg', ''), 10) || 0;
-        const numB = parseInt(b.fileName.replace('gallery_img_', '').replace('.jpg', ''), 10) || 0;
-        return numA - numB;
       })
   },
 
