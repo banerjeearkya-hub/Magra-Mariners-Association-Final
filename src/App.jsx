@@ -31,8 +31,7 @@ import ScrollToTopRoute from './components/ScrollToTopRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfficialLogin from './components/OfficialLogin';
 import OfficialDashboard from './components/OfficialDashboard';
-import MemberLogin from './components/MemberLogin';
-import MemberDashboard from './components/MemberDashboard';
+import MemberPortal from './components/MemberPortal';
 
 // Layout wrapper to conditionally render public navbar/footer
 const AppLayout = ({ navLinks }) => {
@@ -40,6 +39,7 @@ const AppLayout = ({ navLinks }) => {
   const isStandalonePortal = 
     location.pathname === '/login' || 
     location.pathname === '/dashboard' ||
+    location.pathname === '/member-portal' ||
     location.pathname === '/member-login' ||
     location.pathname === '/member-dashboard';
 
@@ -88,9 +88,10 @@ const AppLayout = ({ navLinks }) => {
             </>
           } />
 
-          {/* Member Authentication & Validity Portal */}
-          <Route path="/member-login" element={<MemberLogin />} />
-          <Route path="/member-dashboard" element={<MemberDashboard />} />
+          {/* Member Registration & Verification Portal */}
+          <Route path="/member-portal" element={<MemberPortal />} />
+          <Route path="/member-login" element={<MemberPortal />} />
+          <Route path="/member-dashboard" element={<MemberPortal />} />
 
           {/* Official Authentication Portal */}
           <Route path="/login" element={<OfficialLogin />} />
@@ -134,7 +135,6 @@ function App() {
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
     { label: "Brochure", href: "/brochure" },
     { label: "Events", href: "/events" },
-    { label: "Member Login", href: "/member-login" },
     { label: "Contact", href: "/contact" }
   ];
 

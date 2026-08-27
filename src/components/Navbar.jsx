@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { FaBars, FaTimes } from 'react-icons/fa';
+import { FaBars, FaTimes, FaShieldAlt } from 'react-icons/fa';
 import logoImg from '../assets/logo.png';
+import PortalModal from './PortalModal';
 import './Navbar.css';
 
 const Navbar = ({ navLinks = [] }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [portalModalOpen, setPortalModalOpen] = useState(false);
   const menuRef = useRef(null);
 
   const toggleMenu = () => setIsOpen(!isOpen);
@@ -37,74 +39,88 @@ const Navbar = ({ navLinks = [] }) => {
   }, []);
 
   return (
-    <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} glassmorphism`}>
-      <div className="navbar-container" ref={menuRef}>
-        {/* Logo and Brand Name */}
-        <Link to="/" className="navbar-logo-container" onClick={() => setIsOpen(false)}>
-          <img src={logoImg} alt="MMA Logo" className="navbar-logo" />
-          <div className="navbar-brand-text">
-            <span className="navbar-brand-title">MAGRA MARINERS</span>
-            <span className="navbar-brand-subtitle">ASSOCIATION</span>
-          </div>
-        </Link>
+    <>
+      <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''} glassmorphism`}>
+        <div className="navbar-container" ref={menuRef}>
+          {/* Logo and Brand Name */}
+          <Link to="/" className="navbar-logo-container" onClick={() => setIsOpen(false)}>
+            <img src={logoImg} alt="MMA Logo" className="navbar-logo" />
+            <div className="navbar-brand-text">
+              <span className="navbar-brand-title">MAGRA MARINERS</span>
+              <span className="navbar-brand-subtitle">ASSOCIATION</span>
+            </div>
+          </Link>
 
-        {/* Desktop Menu: options are directly visible horizontally */}
-        <ul className="navbar-links-desktop">
-          {navLinks.map((link, idx) => (
-            <li key={idx} className="navbar-item">
-              <NavLink 
-                to={link.href} 
-                className={({ isActive }) => `navbar-link ${isActive ? 'active-link' : ''}`}
+          {/* Desktop Menu: options are directly visible horizontally */}
+          <ul className="navbar-links-desktop">
+            {navLinks.map((link, idx) => (
+              <li key={idx} className="navbar-item">
+                <NavLink 
+                  to={link.href} 
+                  className={({ isActive }) => `navbar-link ${isActive ? 'active-link' : ''}`}
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
+            <li className="navbar-item">
+              <button 
+                className="navbar-official-btn"
+                onClick={() => setPortalModalOpen(true)}
               >
-                {link.label}
-              </NavLink>
+                <FaShieldAlt style={{ marginRight: '6px' }} /> Portal
+              </button>
             </li>
-          ))}
-          <li className="navbar-item">
-            <Link to="/login" className="navbar-official-btn">
-              Official Portal
-            </Link>
-          </li>
-        </ul>
+          </ul>
 
-        {/* Mobile Menu Action (Hamburger Icon) */}
-        <div className="navbar-actions-mobile">
-          <button 
-            onClick={toggleMenu} 
-            className="hamburger-btn"
-            aria-label="Toggle navigation menu"
-          >
-            {isOpen ? <FaTimes /> : <FaBars />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
-      <div className={`navbar-drawer-mobile ${isOpen ? 'drawer-open' : ''} glassmorphism`}>
-        <ul className="navbar-links-mobile">
-          {navLinks.map((link, idx) => (
-            <li key={idx} className="navbar-item-mobile">
-              <NavLink 
-                to={link.href} 
-                className={({ isActive }) => `navbar-link-mobile ${isActive ? 'active-link-mobile' : ''}`}
-                onClick={() => setIsOpen(false)}
-              >
-                {link.label}
-              </NavLink>
-            </li>
-          ))}
-          <li className="navbar-item-mobile" style={{ marginTop: '10px' }}>
-            <Link 
-              to="/login" 
-              className="navbar-link-mobile official-mobile-link"
-              onClick={() => setIsOpen(false)}
+          {/* Mobile Menu Action (Hamburger Icon) */}
+          <div className="navbar-actions-mobile">
+            <button 
+              onClick={toggleMenu} 
+              className="hamburger-btn"
+              aria-label="Toggle navigation menu"
             >
-              🔒 Official Portal
-            </Link>
-          </li>
-        </ul>
-      </div>
-    </nav>
+              {isOpen ? <FaTimes /> : <FaBars />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Drawer */}
+        <div className={`navbar-drawer-mobile ${isOpen ? 'drawer-open' : ''} glassmorphism`}>
+          <ul className="navbar-links-mobile">
+            {navLinks.map((link, idx) => (
+              <li key={idx} className="navbar-item-mobile">
+                <NavLink 
+                  to={link.href} 
+                  className={({ isActive }) => `navbar-link-mobile ${isActive ? 'active-link-mobile' : ''}`}
+                  onClick={() => setIsOpen(false)}
+                >
+                  {link.label}
+                </NavLink>
+              </li>
+            ))}
+            <li className="navbar-item-mobile" style={{ marginTop: '10px' }}>
+              <button 
+                className="navbar-link-mobile official-mobile-link"
+                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
+                onClick={() => {
+                  setIsOpen(false);
+                  setPortalModalOpen(true);
+                }}
+              >
+                🛡️ Portal (Member & Official)
+              </button>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      {/* Single Portal Modal Selector */}
+      <PortalModal 
+        isOpen={portalModalOpen}
+        onClose={() => setPortalModalOpen(false)}
+      />
+    </>
   );
 };
 

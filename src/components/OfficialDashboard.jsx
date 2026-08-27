@@ -674,81 +674,85 @@ const OfficialDashboard = () => {
     }
   };
 
-  // --- CASHIER & MEMBER MANAGEMENT ACTIONS ---
-  const handleSaveMember = async (e) => {
-    e.preventDefault();
-    if (!memberForm.name.trim() || !memberForm.mobile.trim()) {
-      showAlert('error', 'Member name and mobile number are required.');
-      return;
-    }
-
-    setMemberSaving(true);
+  // --- ADMIN MEMBER VERIFICATION ACTIONS ---
+  const handleVerifyMember = async (mem) => {
     try {
-      let formattedMobile = memberForm.mobile.replace(/\D/g, '');
-      if (formattedMobile.length === 10) formattedMobile = `+91${formattedMobile}`;
-      else if (!formattedMobile.startsWith('+')) formattedMobile = `+${formattedMobile}`;
-
-      const memberPayload = {
-        name: memberForm.name.trim(),
-        mobile: formattedMobile,
-        startDate: memberForm.startDate,
-        endDate: memberForm.endDate,
-        durationMonths: Number(memberForm.durationMonths) || 12,
-        status: memberForm.status,
-        updatedBy: currentUser.email,
-        updatedAt: serverTimestamp()
+      const updatePayload = {
+        status: 'Verified',
+        verifiedAt: serverTimestamp(),
+        verifiedBy: currentUser.email
       };
 
-      if (editingMember && editingMember.id && !editingMember.id.startsWith('sample')) {
-        const memberDocRef = doc(db, 'members', editingMember.id);
-        await withTimeout(updateDoc(memberDocRef, memberPayload), 8000, 'Failed to update member.');
-
-        await logActivity({
-          action: 'UPDATE',
-          section: 'Members',
-          documentId: editingMember.id,
-          documentTitle: memberForm.name.trim(),
-          beforeData: editingMember,
-          afterData: memberPayload,
-          details: `Cashier updated membership for ${memberForm.name} (Valid till ${memberForm.endDate})`,
-          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
-        });
-
-        showAlert('success', `Membership for ${memberForm.name} updated!`);
-      } else {
-        memberPayload.createdAt = serverTimestamp();
-        const docRef = await withTimeout(addDoc(collection(db, 'members'), memberPayload), 8000, 'Failed to add member.');
-
-        await logActivity({
-          action: 'CREATE',
-          section: 'Members',
-          documentId: docRef.id,
-          documentTitle: memberForm.name.trim(),
-          beforeData: null,
-          afterData: memberPayload,
-          details: `Cashier registered new member ${memberForm.name} (${formattedMobile})`,
-          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
-        });
-
-        showAlert('success', `Member ${memberForm.name} registered successfully!`);
+      if (!mem.id.startsWith('subhankar')) {
+        const memberDocRef = doc(db, 'members', mem.id);
+        await withTimeout(updateDoc(memberDocRef, updatePayload), 8000, 'Failed to verify member application.');
       }
 
-      setMemberModalOpen(false);
+      // Update local state if pre-seeded
+      setMembers(prev => prev.map(m => m.id === mem.id ? { ...m, status: 'Verified', verifiedBy: currentUser.email } : m));
+
+      // Audit Logging
+      await logActivity({
+        action: 'UPDATE',
+        section: 'Members',
+        documentId: mem.id,
+        documentTitle: mem.name,
+        beforeData: mem,
+        afterData: { ...mem, ...updatePayload },
+        details: `Admin verified membership application for ${mem.name} (${mem.mobileNumber || mem.mobile})`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
+      showAlert('success', `Member ${mem.name} marked as Verified!`);
     } catch (err) {
       console.error(err);
-      showAlert('error', `Failed to save member: ${err.message}`);
-    } finally {
-      setMemberSaving(false);
+      showAlert('error', `Failed to verify member: ${err.message}`);
+    }
+  };
+
+  const handleRejectMember = async (mem) => {
+    try {
+      const updatePayload = {
+        status: 'Rejected',
+        verifiedAt: serverTimestamp(),
+        verifiedBy: currentUser.email
+      };
+
+      if (!mem.id.startsWith('subhankar')) {
+        const memberDocRef = doc(db, 'members', mem.id);
+        await withTimeout(updateDoc(memberDocRef, updatePayload), 8000, 'Failed to reject member application.');
+      }
+
+      // Update local state if pre-seeded
+      setMembers(prev => prev.map(m => m.id === mem.id ? { ...m, status: 'Rejected', verifiedBy: currentUser.email } : m));
+
+      // Audit Logging
+      await logActivity({
+        action: 'UPDATE',
+        section: 'Members',
+        documentId: mem.id,
+        documentTitle: mem.name,
+        beforeData: mem,
+        afterData: { ...mem, ...updatePayload },
+        details: `Admin rejected membership application for ${mem.name} (${mem.mobileNumber || mem.mobile})`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
+      showAlert('success', `Member ${mem.name} application marked as Rejected.`);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to reject member: ${err.message}`);
     }
   };
 
   const handleDeleteMember = async (mem) => {
-    if (!window.confirm(`Are you sure you want to delete member ${mem.name}?`)) return;
+    if (!window.confirm(`Are you sure you want to delete member application for ${mem.name}?`)) return;
 
     try {
-      if (!mem.id.startsWith('sample')) {
+      if (!mem.id.startsWith('subhankar')) {
         await deleteDoc(doc(db, 'members', mem.id));
       }
+      setMembers(prev => prev.filter(m => m.id !== mem.id));
 
       await logActivity({
         action: 'DELETE',
@@ -757,7 +761,7 @@ const OfficialDashboard = () => {
         documentTitle: mem.name,
         beforeData: mem,
         afterData: null,
-        details: `Cashier removed member record for ${mem.name}`,
+        details: `Admin deleted member application record for ${mem.name}`,
         user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
       });
 
@@ -1531,99 +1535,84 @@ const OfficialDashboard = () => {
         )}
 
         {/* ======================================================== */}
-        {/* TAB 6: MEMBER DATABASE & CASHIER CONTROL                 */}
+        {/* TAB 6: MEMBER APPLICATION VERIFICATIONS (ADMIN)          */}
         {/* ======================================================== */}
         {activeTab === 'members' && (
           <section className="dash-section">
             <div className="section-toolbar">
               <div>
-                <h3>Cashier Member Database & Validity Control</h3>
-                <p>Register members, update membership duration, start/end dates, and active/expired status.</p>
+                <h3>Admin Member Application Verifications</h3>
+                <p>Review member registration applications and manually Verify or Reject pending requests.</p>
               </div>
-              <button 
-                className="btn-primary add-entity-btn"
-                onClick={() => {
-                  setEditingMember(null);
-                  setMemberForm({
-                    name: '',
-                    mobile: '',
-                    startDate: getLocalTodayString(),
-                    endDate: '2026-12-31',
-                    durationMonths: 12,
-                    status: 'Active'
-                  });
-                  setMemberModalOpen(true);
-                }}
-              >
-                <FaPlus /> Register New Member
-              </button>
             </div>
 
             {loadingMembers ? (
-              <div className="dashboard-loading">Loading member database from Cloud Firestore...</div>
+              <div className="dashboard-loading">Loading member applications from Cloud Firestore...</div>
             ) : members.length === 0 ? (
               <div className="empty-dashboard-card glassmorphism">
                 <FaUserCheck className="empty-dash-icon" />
-                <h4>No Members Registered</h4>
-                <p>Click "Register New Member" above to add your first member.</p>
+                <h4>No Member Applications Registered</h4>
+                <p>Member registration applications submitted via the Member Portal will appear here.</p>
               </div>
             ) : (
               <div className="table-responsive glassmorphism">
                 <table className="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Member Name</th>
+                      <th>Applicant Name</th>
                       <th>Mobile Number</th>
-                      <th>Status</th>
-                      <th>Valid Till (End Date)</th>
-                      <th>Duration</th>
-                      <th>Start Date</th>
-                      <th>Cashier Actions</th>
+                      <th>Registration Date</th>
+                      <th>Verification Status</th>
+                      <th>Admin Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {members.map((mem) => {
-                      const isExpiredStatus = mem.status === 'Expired' || (mem.endDate && mem.endDate < getLocalTodayString());
+                      const mob = mem.mobileNumber || mem.mobile || 'N/A';
+                      const regDate = mem.createdAt?.toDate 
+                        ? mem.createdAt.toDate().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : (mem.createdAtIso ? new Date(mem.createdAtIso).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent');
+
+                      const memStatus = mem.status || 'Pending Verification';
 
                       return (
                         <tr key={mem.id}>
                           <td><strong>{mem.name}</strong></td>
-                          <td><span className="mobile-pill"><FaMobileAlt /> {mem.mobile}</span></td>
+                          <td><span className="mobile-pill"><FaMobileAlt /> {mob}</span></td>
+                          <td><span className="log-date-text">{regDate}</span></td>
                           <td>
-                            {isExpiredStatus ? (
-                              <span className="badge-status status-past"><FaTimesCircle /> EXPIRED</span>
-                            ) : (
-                              <span className="badge-status status-today"><FaCheckCircle /> ACTIVE</span>
+                            {memStatus === 'Pending Verification' && (
+                              <span className="badge-status status-upcoming"><FaClock /> PENDING VERIFICATION</span>
+                            )}
+                            {memStatus === 'Verified' && (
+                              <span className="badge-status status-today"><FaCheckCircle /> VERIFIED</span>
+                            )}
+                            {memStatus === 'Rejected' && (
+                              <span className="badge-status status-past"><FaTimesCircle /> REJECTED</span>
                             )}
                           </td>
-                          <td>
-                            <span className="badge-date">
-                              <FaCalendarAlt /> {mem.endDate || 'Dec 2026'}
-                            </span>
-                          </td>
-                          <td><span className="section-pill">{mem.durationMonths ? `${mem.durationMonths} Months` : '12 Months'}</span></td>
-                          <td><span className="log-date-text">{mem.startDate || '2026-01-01'}</span></td>
-                          <td>
+                          <td className="actions-td">
                             <button 
                               className="action-icon-btn edit-btn"
-                              onClick={() => {
-                                setEditingMember(mem);
-                                setMemberForm({
-                                  name: mem.name || '',
-                                  mobile: mem.mobile || '',
-                                  startDate: mem.startDate || getLocalTodayString(),
-                                  endDate: mem.endDate || '2026-12-31',
-                                  durationMonths: mem.durationMonths || 12,
-                                  status: mem.status || 'Active'
-                                });
-                                setMemberModalOpen(true);
-                              }}
+                              onClick={() => handleVerifyMember(mem)}
+                              title="Verify Member Application"
                             >
-                              <FaEdit /> Cashier Edit
+                              <FaCheckCircle /> Verify
                             </button>
+
+                            <button 
+                              className="action-icon-btn delete-btn"
+                              onClick={() => handleRejectMember(mem)}
+                              title="Reject Member Application"
+                              style={{ background: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.35)', color: '#f87171' }}
+                            >
+                              <FaTimesCircle /> Reject
+                            </button>
+
                             <button 
                               className="action-icon-btn delete-btn"
                               onClick={() => handleDeleteMember(mem)}
+                              title="Delete Record"
                             >
                               <FaTrash />
                             </button>
