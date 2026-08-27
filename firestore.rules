@@ -25,6 +25,12 @@ service cloud.firestore {
       allow create, update, delete: if isAuthorizedOfficial();
     }
 
+    // Members Collection: Public/Members can view, only Cashier/Official can write/update/delete
+    match /members/{memberId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedOfficial();
+    }
+
     // Activity & Audit Logs Collection: Strictly Append-Only (Immutable)
     match /activityLogs/{logId} {
       allow read: if isAuthorizedOfficial();

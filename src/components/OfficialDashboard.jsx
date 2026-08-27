@@ -72,7 +72,7 @@ const OfficialDashboard = () => {
   
   const navigate = useNavigate();
 
-  // Navigation Tabs: 'events' | 'gallery' | 'activity' | 'logins' | 'users'
+  // Navigation Tabs: 'events' | 'gallery' | 'activity' | 'logins' | 'users' | 'members'
   const [activeTab, setActiveTab] = useState('events');
 
   // Real-time Data States
@@ -81,6 +81,7 @@ const OfficialDashboard = () => {
   const [activityLogs, setActivityLogs] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
   const [adminUsers, setAdminUsers] = useState([]);
+  const [members, setMembers] = useState([]);
 
   // Loading States
   const [loadingEvents, setLoadingEvents] = useState(true);
@@ -88,6 +89,7 @@ const OfficialDashboard = () => {
   const [loadingLogs, setLoadingLogs] = useState(true);
   const [loadingLogins, setLoadingLogins] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
   // Event Modal States
   const [eventModalOpen, setEventModalOpen] = useState(false);
@@ -111,6 +113,19 @@ const OfficialDashboard = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({ name: '', email: '', role: ROLES.ADMIN, status: 'ACTIVE' });
   const [userSaving, setUserSaving] = useState(false);
+
+  // Member & Cashier Control Modal State
+  const [memberModalOpen, setMemberModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
+  const [memberForm, setMemberForm] = useState({
+    name: '',
+    mobile: '',
+    startDate: getLocalTodayString(),
+    endDate: '2026-12-31',
+    durationMonths: 12,
+    status: 'Active'
+  });
+  const [memberSaving, setMemberSaving] = useState(false);
 
   // Activity Details Modal State
   const [selectedLog, setSelectedLog] = useState(null);
@@ -291,6 +306,46 @@ const OfficialDashboard = () => {
     } catch (e) {
       clearTimeout(timeout);
       setLoadingUsers(false);
+    }
+    return () => { clearTimeout(timeout); unsubscribe(); };
+  }, [currentUser, isOfficial]);
+
+  // 6. Subscribe to Members (Cashier)
+  useEffect(() => {
+    if (!currentUser || !isOfficial) return;
+    const timeout = setTimeout(() => setLoadingMembers(false), 2000);
+
+    let unsubscribe = () => {};
+    try {
+      const membersRef = collection(db, 'members');
+      unsubscribe = onSnapshot(membersRef, (snapshot) => {
+        clearTimeout(timeout);
+        const membersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Pre-seed sample member if empty
+        if (membersList.length === 0) {
+          const sample = {
+            id: 'sample-subhankar',
+            name: 'Subhankar Banerjee',
+            mobile: '+919876543210',
+            status: 'Active',
+            startDate: '2026-01-01',
+            endDate: '2026-12-31',
+            durationMonths: 12
+          };
+          setMembers([sample]);
+        } else {
+          setMembers(membersList);
+        }
+        setLoadingMembers(false);
+      }, (err) => {
+        clearTimeout(timeout);
+        console.warn('Firestore members notice:', err);
+        setLoadingMembers(false);
+      });
+    } catch (e) {
+      clearTimeout(timeout);
+      setLoadingMembers(false);
     }
     return () => { clearTimeout(timeout); unsubscribe(); };
   }, [currentUser, isOfficial]);
@@ -619,6 +674,100 @@ const OfficialDashboard = () => {
     }
   };
 
+  // --- CASHIER & MEMBER MANAGEMENT ACTIONS ---
+  const handleSaveMember = async (e) => {
+    e.preventDefault();
+    if (!memberForm.name.trim() || !memberForm.mobile.trim()) {
+      showAlert('error', 'Member name and mobile number are required.');
+      return;
+    }
+
+    setMemberSaving(true);
+    try {
+      let formattedMobile = memberForm.mobile.replace(/\D/g, '');
+      if (formattedMobile.length === 10) formattedMobile = `+91${formattedMobile}`;
+      else if (!formattedMobile.startsWith('+')) formattedMobile = `+${formattedMobile}`;
+
+      const memberPayload = {
+        name: memberForm.name.trim(),
+        mobile: formattedMobile,
+        startDate: memberForm.startDate,
+        endDate: memberForm.endDate,
+        durationMonths: Number(memberForm.durationMonths) || 12,
+        status: memberForm.status,
+        updatedBy: currentUser.email,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingMember && editingMember.id && !editingMember.id.startsWith('sample')) {
+        const memberDocRef = doc(db, 'members', editingMember.id);
+        await withTimeout(updateDoc(memberDocRef, memberPayload), 8000, 'Failed to update member.');
+
+        await logActivity({
+          action: 'UPDATE',
+          section: 'Members',
+          documentId: editingMember.id,
+          documentTitle: memberForm.name.trim(),
+          beforeData: editingMember,
+          afterData: memberPayload,
+          details: `Cashier updated membership for ${memberForm.name} (Valid till ${memberForm.endDate})`,
+          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+        });
+
+        showAlert('success', `Membership for ${memberForm.name} updated!`);
+      } else {
+        memberPayload.createdAt = serverTimestamp();
+        const docRef = await withTimeout(addDoc(collection(db, 'members'), memberPayload), 8000, 'Failed to add member.');
+
+        await logActivity({
+          action: 'CREATE',
+          section: 'Members',
+          documentId: docRef.id,
+          documentTitle: memberForm.name.trim(),
+          beforeData: null,
+          afterData: memberPayload,
+          details: `Cashier registered new member ${memberForm.name} (${formattedMobile})`,
+          user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+        });
+
+        showAlert('success', `Member ${memberForm.name} registered successfully!`);
+      }
+
+      setMemberModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to save member: ${err.message}`);
+    } finally {
+      setMemberSaving(false);
+    }
+  };
+
+  const handleDeleteMember = async (mem) => {
+    if (!window.confirm(`Are you sure you want to delete member ${mem.name}?`)) return;
+
+    try {
+      if (!mem.id.startsWith('sample')) {
+        await deleteDoc(doc(db, 'members', mem.id));
+      }
+
+      await logActivity({
+        action: 'DELETE',
+        section: 'Members',
+        documentId: mem.id,
+        documentTitle: mem.name,
+        beforeData: mem,
+        afterData: null,
+        details: `Cashier removed member record for ${mem.name}`,
+        user: { uid: currentUser.uid, email: currentUser.email, name: officialName, role: userRole }
+      });
+
+      showAlert('success', `Member ${mem.name} deleted.`);
+    } catch (err) {
+      console.error(err);
+      showAlert('error', `Failed to delete member: ${err.message}`);
+    }
+  };
+
   // --- FILTERED & PAGINATED AUDIT LOGS ---
   const filteredLogs = useMemo(() => {
     return activityLogs.filter((log) => {
@@ -810,6 +959,13 @@ const OfficialDashboard = () => {
             onClick={() => setActiveTab('users')}
           >
             <FaUsersCog /> Users & Access ({adminUsers.length})
+          </button>
+
+          <button 
+            className={`dash-tab-btn ${activeTab === 'members' ? 'active' : ''}`}
+            onClick={() => setActiveTab('members')}
+          >
+            <FaUserCheck /> Member Database & Cashier ({members.length})
           </button>
         </nav>
 
@@ -1373,6 +1529,114 @@ const OfficialDashboard = () => {
             )}
           </section>
         )}
+
+        {/* ======================================================== */}
+        {/* TAB 6: MEMBER DATABASE & CASHIER CONTROL                 */}
+        {/* ======================================================== */}
+        {activeTab === 'members' && (
+          <section className="dash-section">
+            <div className="section-toolbar">
+              <div>
+                <h3>Cashier Member Database & Validity Control</h3>
+                <p>Register members, update membership duration, start/end dates, and active/expired status.</p>
+              </div>
+              <button 
+                className="btn-primary add-entity-btn"
+                onClick={() => {
+                  setEditingMember(null);
+                  setMemberForm({
+                    name: '',
+                    mobile: '',
+                    startDate: getLocalTodayString(),
+                    endDate: '2026-12-31',
+                    durationMonths: 12,
+                    status: 'Active'
+                  });
+                  setMemberModalOpen(true);
+                }}
+              >
+                <FaPlus /> Register New Member
+              </button>
+            </div>
+
+            {loadingMembers ? (
+              <div className="dashboard-loading">Loading member database from Cloud Firestore...</div>
+            ) : members.length === 0 ? (
+              <div className="empty-dashboard-card glassmorphism">
+                <FaUserCheck className="empty-dash-icon" />
+                <h4>No Members Registered</h4>
+                <p>Click "Register New Member" above to add your first member.</p>
+              </div>
+            ) : (
+              <div className="table-responsive glassmorphism">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Member Name</th>
+                      <th>Mobile Number</th>
+                      <th>Status</th>
+                      <th>Valid Till (End Date)</th>
+                      <th>Duration</th>
+                      <th>Start Date</th>
+                      <th>Cashier Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.map((mem) => {
+                      const isExpiredStatus = mem.status === 'Expired' || (mem.endDate && mem.endDate < getLocalTodayString());
+
+                      return (
+                        <tr key={mem.id}>
+                          <td><strong>{mem.name}</strong></td>
+                          <td><span className="mobile-pill"><FaMobileAlt /> {mem.mobile}</span></td>
+                          <td>
+                            {isExpiredStatus ? (
+                              <span className="badge-status status-past"><FaTimesCircle /> EXPIRED</span>
+                            ) : (
+                              <span className="badge-status status-today"><FaCheckCircle /> ACTIVE</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className="badge-date">
+                              <FaCalendarAlt /> {mem.endDate || 'Dec 2026'}
+                            </span>
+                          </td>
+                          <td><span className="section-pill">{mem.durationMonths ? `${mem.durationMonths} Months` : '12 Months'}</span></td>
+                          <td><span className="log-date-text">{mem.startDate || '2026-01-01'}</span></td>
+                          <td>
+                            <button 
+                              className="action-icon-btn edit-btn"
+                              onClick={() => {
+                                setEditingMember(mem);
+                                setMemberForm({
+                                  name: mem.name || '',
+                                  mobile: mem.mobile || '',
+                                  startDate: mem.startDate || getLocalTodayString(),
+                                  endDate: mem.endDate || '2026-12-31',
+                                  durationMonths: mem.durationMonths || 12,
+                                  status: mem.status || 'Active'
+                                });
+                                setMemberModalOpen(true);
+                              }}
+                            >
+                              <FaEdit /> Cashier Edit
+                            </button>
+                            <button 
+                              className="action-icon-btn delete-btn"
+                              onClick={() => handleDeleteMember(mem)}
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        )}
       </main>
 
       {/* --- ADD / EDIT EVENT MODAL --- */}
@@ -1566,6 +1830,112 @@ const OfficialDashboard = () => {
                   </button>
                   <button type="submit" className="btn-primary" disabled={userSaving}>
                     {userSaving ? 'Saving Role...' : 'Save Permissions'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* --- CASHIER MEMBER REGISTRATION & VALIDITY EDIT MODAL --- */}
+      <AnimatePresence>
+        {memberModalOpen && (
+          <div className="modal-backdrop">
+            <motion.div 
+              className="dashboard-modal glassmorphism"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+            >
+              <div className="modal-header">
+                <h3>{editingMember ? 'Cashier: Edit Membership Validity' : 'Cashier: Register New Member'}</h3>
+                <button className="modal-close-btn" onClick={() => setMemberModalOpen(false)}>
+                  <FaTimes />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveMember} className="modal-form">
+                <div className="form-group">
+                  <label>Member Name *</label>
+                  <input 
+                    type="text"
+                    required
+                    placeholder="e.g. Subhankar Banerjee"
+                    value={memberForm.name}
+                    onChange={(e) => setMemberForm({ ...memberForm, name: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Registered Mobile Number (10 Digits) *</label>
+                  <input 
+                    type="tel"
+                    required
+                    placeholder="e.g. 9876543210"
+                    value={memberForm.mobile}
+                    onChange={(e) => setMemberForm({ ...memberForm, mobile: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Membership Status *</label>
+                  <select 
+                    value={memberForm.status}
+                    onChange={(e) => setMemberForm({ ...memberForm, status: e.target.value })}
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Pending">Pending</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Validity Duration (Months)</label>
+                  <select 
+                    value={memberForm.durationMonths}
+                    onChange={(e) => {
+                      const months = Number(e.target.value);
+                      const start = new Date(memberForm.startDate || new Date());
+                      start.setMonth(start.getMonth() + months);
+                      const endIso = start.toISOString().split('T')[0];
+                      setMemberForm({ ...memberForm, durationMonths: months, endDate: endIso });
+                    }}
+                  >
+                    <option value={3}>3 Months</option>
+                    <option value={6}>6 Months</option>
+                    <option value={12}>12 Months (1 Year)</option>
+                    <option value={24}>24 Months (2 Years)</option>
+                    <option value={36}>36 Months (3 Years)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Membership Start Date</label>
+                  <input 
+                    type="date"
+                    required
+                    value={memberForm.startDate}
+                    onChange={(e) => setMemberForm({ ...memberForm, startDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Valid Till (End Date)</label>
+                  <input 
+                    type="date"
+                    required
+                    value={memberForm.endDate}
+                    onChange={(e) => setMemberForm({ ...memberForm, endDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setMemberModalOpen(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary" disabled={memberSaving}>
+                    {memberSaving ? 'Saving Validity...' : 'Save Membership'}
                   </button>
                 </div>
               </form>

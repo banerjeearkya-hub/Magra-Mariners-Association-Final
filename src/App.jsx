@@ -31,11 +31,17 @@ import ScrollToTopRoute from './components/ScrollToTopRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import OfficialLogin from './components/OfficialLogin';
 import OfficialDashboard from './components/OfficialDashboard';
+import MemberLogin from './components/MemberLogin';
+import MemberDashboard from './components/MemberDashboard';
 
 // Layout wrapper to conditionally render public navbar/footer
 const AppLayout = ({ navLinks }) => {
   const location = useLocation();
-  const isAuthOrDashboard = location.pathname === '/login' || location.pathname === '/dashboard';
+  const isStandalonePortal = 
+    location.pathname === '/login' || 
+    location.pathname === '/dashboard' ||
+    location.pathname === '/member-login' ||
+    location.pathname === '/member-dashboard';
 
   return (
     <>
@@ -43,7 +49,7 @@ const AppLayout = ({ navLinks }) => {
       <ScrollToTopRoute />
 
       {/* Sticky Navigation - on public pages only */}
-      {!isAuthOrDashboard && <Navbar navLinks={navLinks} />}
+      {!isStandalonePortal && <Navbar navLinks={navLinks} />}
       
       {/* Main Content Layout */}
       <main>
@@ -82,6 +88,10 @@ const AppLayout = ({ navLinks }) => {
             </>
           } />
 
+          {/* Member Authentication & Validity Portal */}
+          <Route path="/member-login" element={<MemberLogin />} />
+          <Route path="/member-dashboard" element={<MemberDashboard />} />
+
           {/* Official Authentication Portal */}
           <Route path="/login" element={<OfficialLogin />} />
 
@@ -94,10 +104,10 @@ const AppLayout = ({ navLinks }) => {
       </main>
 
       {/* Footer - on public pages only */}
-      {!isAuthOrDashboard && <Footer logo={logoImg} navLinks={navLinks} />}
+      {!isStandalonePortal && <Footer logo={logoImg} navLinks={navLinks} />}
       
       {/* Floating back-to-top widget */}
-      {!isAuthOrDashboard && <ScrollToTop />}
+      {!isStandalonePortal && <ScrollToTop />}
     </>
   );
 };
@@ -124,6 +134,7 @@ function App() {
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
     { label: "Brochure", href: "/brochure" },
     { label: "Events", href: "/events" },
+    { label: "Member Portal", href: "/member-login" },
     { label: "Contact", href: "/contact" }
   ];
 
