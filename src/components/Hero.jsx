@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaChevronDown, FaUsers, FaInfoCircle } from 'react-icons/fa';
+import { FaUsers } from 'react-icons/fa';
 import logoImg from '../assets/logo.png';
 import './Hero.css';
 
@@ -65,17 +65,6 @@ const Hero = ({ data }) => {
           </a>
         </motion.div>
       </div>
-
-      {/* Floating Indicator */}
-      <motion.div
-        className="scroll-down-indicator"
-        animate={{ y: [0, 10, 0] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-      >
-        <a href="#about" aria-label="Scroll down">
-          <FaChevronDown />
-        </a>
-      </motion.div>
     </section>
   );
 };
