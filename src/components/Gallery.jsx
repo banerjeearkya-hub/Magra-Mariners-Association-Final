@@ -72,9 +72,7 @@ const Gallery = ({ data }) => {
     if (img.url) return img.url;
     if (img.src) return img.src;
     if (img.fileName) {
-      const base = import.meta.env.BASE_URL || './';
-      const cleanBase = base.endsWith('/') ? base : `${base}/`;
-      return `${cleanBase}gallery/${img.fileName}`;
+      return `gallery/${img.fileName}`;
     }
     return '';
   };

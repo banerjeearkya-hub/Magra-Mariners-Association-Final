@@ -25,14 +25,10 @@ const SafeImage = ({
   }, [src, retryCount]);
 
   const handleError = () => {
-    // Path recovery attempt for relative gallery paths
     if (currentSrc && typeof currentSrc === 'string' && !currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
-      if (currentSrc.startsWith('./')) {
-        setCurrentSrc(currentSrc.replace(/^\.\//, ''));
-        return;
-      }
-      if (currentSrc.startsWith('/')) {
-        setCurrentSrc(`.${currentSrc}`);
+      const fileName = currentSrc.split('/').pop();
+      if (fileName && !currentSrc.startsWith('gallery/')) {
+        setCurrentSrc(`gallery/${fileName}`);
         return;
       }
     }
