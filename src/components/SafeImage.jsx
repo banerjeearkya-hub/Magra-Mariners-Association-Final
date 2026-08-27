@@ -4,7 +4,7 @@ import './SafeImage.css';
 
 /**
  * SafeImage Component
- * Clean, fast, and fail-proof image rendering with automatic path recovery.
+ * Robust multi-candidate path resolver for guaranteed image loading across dev & production hosts.
  */
 const SafeImage = ({
   src,
@@ -16,33 +16,59 @@ const SafeImage = ({
   onClick
 }) => {
   const [hasError, setHasError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(src);
+  const [candidateIndex, setCandidateIndex] = useState(0);
+  const [candidates, setCandidates] = useState([]);
   const [retryCount, setRetryCount] = useState(0);
 
+  // Compute all potential URL candidates for the image
   useEffect(() => {
+    if (!src) {
+      setCandidates([]);
+      setHasError(true);
+      return;
+    }
+
+    const initial = src.trim();
+    if (initial.startsWith('http') || initial.startsWith('data:')) {
+      setCandidates([initial]);
+    } else {
+      const fileName = initial.split('/').pop();
+      const base = import.meta.env.BASE_URL || './';
+      const cleanBase = base.endsWith('/') ? base : `${base}/`;
+
+      const list = [
+        initial,
+        `${cleanBase}gallery/${fileName}`,
+        `./gallery/${fileName}`,
+        `gallery/${fileName}`,
+        `/gallery/${fileName}`,
+        `./assets/${fileName}`
+      ];
+      setCandidates([...new Set(list)]);
+    }
+
+    setCandidateIndex(0);
     setHasError(false);
-    setCurrentSrc(src);
   }, [src, retryCount]);
 
   const handleError = () => {
-    if (currentSrc && typeof currentSrc === 'string' && !currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
-      const fileName = currentSrc.split('/').pop();
-      if (fileName && !currentSrc.startsWith('gallery/')) {
-        setCurrentSrc(`gallery/${fileName}`);
-        return;
-      }
+    if (candidateIndex + 1 < candidates.length) {
+      setCandidateIndex((prev) => prev + 1);
+    } else {
+      setHasError(true);
     }
-    setHasError(true);
   };
 
   const handleRetry = (e) => {
     if (e) e.stopPropagation();
     setHasError(false);
-    setCurrentSrc(src);
-    setRetryCount(prev => prev + 1);
+    setCandidateIndex(0);
+    setRetryCount((prev) => prev + 1);
   };
 
-  if (hasError || !currentSrc) {
+  const activeSrc = candidates[candidateIndex] || src;
+
+  if (hasError || !activeSrc) {
     return (
       <div className={`safe-image-container ${containerClassName} image-error-state`} onClick={onClick}>
         <div className="safe-image-fallback">
@@ -66,8 +92,8 @@ const SafeImage = ({
   return (
     <div className={`safe-image-container ${containerClassName}`} onClick={onClick}>
       <img
-        key={`${currentSrc}-${retryCount}`}
-        src={currentSrc}
+        key={`${activeSrc}-${retryCount}`}
+        src={activeSrc}
         alt={alt}
         className={`safe-image-img ${className}`}
         onError={handleError}
