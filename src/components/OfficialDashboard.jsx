@@ -322,12 +322,12 @@ const OfficialDashboard = () => {
         clearTimeout(timeout);
         const membersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        // Pre-seed sample member if empty
+        // Pre-seed official member if empty
         if (membersList.length === 0) {
           const sample = {
-            id: 'sample-subhankar',
+            id: 'subhankar-9475083599',
             name: 'Subhankar Banerjee',
-            mobile: '+919876543210',
+            mobile: '+919475083599',
             status: 'Active',
             startDate: '2026-01-01',
             endDate: '2026-12-31',
