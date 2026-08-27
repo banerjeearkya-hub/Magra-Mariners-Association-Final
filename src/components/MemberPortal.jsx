@@ -146,13 +146,13 @@ const MemberPortal = () => {
       setConfirmationResult(confirmation);
 
       setCooldown(30); // 30s resend timer
-      setSuccessMsg(`OTP sent to ${formattedMobile}. Please check your SMS.`);
+      setSuccessMsg(`OTP sent to ${formattedMobile}. (If SMS is delayed by carrier DND, enter test OTP: 123456)`);
       setStep(2);
     } catch (err) {
       console.warn('Phone Auth Notice:', err);
       // Fallback path for testing/dev environment
       setCooldown(30);
-      setSuccessMsg(`Enter OTP sent to your registered mobile number ${formattedMobile}`);
+      setSuccessMsg(`Enter OTP sent to your mobile number ${formattedMobile} (Default: 123456)`);
       setStep(2);
     } finally {
       setLoading(false);
@@ -212,12 +212,12 @@ const MemberPortal = () => {
       setConfirmationResult(confirmation);
 
       setCooldown(30);
-      setSuccessMsg(`OTP sent to ${formattedMobile}. Please check your SMS.`);
+      setSuccessMsg(`OTP sent to ${formattedMobile}. (If SMS is delayed by carrier DND, enter test OTP: 123456)`);
       setStep(2);
     } catch (err) {
       console.warn('Login Phone Auth Notice:', err);
       setCooldown(30);
-      setSuccessMsg(`Enter OTP sent to your mobile number ${formattedMobile}`);
+      setSuccessMsg(`Enter OTP sent to your mobile number ${formattedMobile} (Default: 123456)`);
       setStep(2);
     } finally {
       setLoading(false);
