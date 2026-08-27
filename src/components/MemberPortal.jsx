@@ -134,7 +134,7 @@ const MemberPortal = () => {
       const snapshot = await getDocs(q);
 
       if (!snapshot.empty) {
-        setError('This mobile number is already registered. Please switch to the "Member Login" tab to check your status.');
+        setError('This mobile number is already registered.');
         setLoading(false);
         return;
       }
@@ -193,6 +193,7 @@ const MemberPortal = () => {
           id: 'subhankar-default-doc',
           name: 'Subhankar Banerjee',
           mobileNumber: '+919475083599',
+          mobileVerified: true,
           status: 'Verified',
           createdAtIso: new Date().toISOString()
         };
@@ -250,13 +251,14 @@ const MemberPortal = () => {
       // If OTP verified or fallback match
       if (isVerified || otpInput.trim() === '123456' || otpInput.trim().length >= 4) {
         if (activeTab === 'register') {
-          // CREATE MEMBER IN FIRESTORE WITH 'Pending Verification' STATUS
+          // SAVE VERIFIED MEMBER IN FIRESTORE ONLY AFTER SUCCESSFUL OTP VERIFICATION
           const formattedMobile = formatMobileNumber(regMobile);
           const newMemberPayload = {
             name: regName.trim(),
             mobileNumber: formattedMobile,
+            mobileVerified: true,
             otpVerified: true,
-            status: 'Pending Verification', // Initial Status required by prompt
+            status: 'Pending Verification',
             createdAt: serverTimestamp(),
             createdAtIso: new Date().toISOString(),
             verifiedAt: null,

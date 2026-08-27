@@ -68,7 +68,7 @@ const Navbar = ({ navLinks = [] }) => {
                 className="navbar-official-btn"
                 onClick={() => setPortalModalOpen(true)}
               >
-                <FaShieldAlt style={{ marginRight: '6px' }} /> Portal
+                <FaShieldAlt style={{ marginRight: '6px' }} /> Member Login
               </button>
             </li>
           </ul>
@@ -108,7 +108,7 @@ const Navbar = ({ navLinks = [] }) => {
                   setPortalModalOpen(true);
                 }}
               >
-                🛡️ Portal (Member & Official)
+                🛡️ Member Login
               </button>
             </li>
           </ul>

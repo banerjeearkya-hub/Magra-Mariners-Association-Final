@@ -55,7 +55,7 @@ const Footer = ({ logo, navLinks = [] }) => {
                     fontFamily: 'inherit'
                   }}
                 >
-                  <FaShieldAlt style={{ marginRight: '6px' }} /> Portal (Member & Official)
+                  <FaShieldAlt style={{ marginRight: '6px' }} /> Member Login
                 </button>
               </li>
             </ul>
