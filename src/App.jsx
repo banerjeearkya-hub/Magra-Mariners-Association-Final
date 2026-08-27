@@ -134,7 +134,7 @@ function App() {
     ...(siteData.gallery.images && siteData.gallery.images.length > 0 ? [{ label: "Gallery", href: "/gallery" }] : []),
     { label: "Brochure", href: "/brochure" },
     { label: "Events", href: "/events" },
-    { label: "Member Portal", href: "/member-login" },
+    { label: "Member Login", href: "/member-login" },
     { label: "Contact", href: "/contact" }
   ];
 

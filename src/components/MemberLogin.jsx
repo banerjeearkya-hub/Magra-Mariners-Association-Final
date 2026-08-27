@@ -321,6 +321,22 @@ const MemberLogin = () => {
         {/* Footer info */}
         <div className="member-footer-info">
           <p>For new membership registrations or validity updates, contact the Cashier or Executive Committee.</p>
+          <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <Link 
+              to="/login" 
+              style={{ 
+                color: 'var(--color-green-light)', 
+                fontSize: '0.85rem', 
+                fontWeight: '700', 
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              🔒 Are you an Official? Sign in to Official Portal →
+            </Link>
+          </div>
         </div>
       </motion.div>
     </div>
