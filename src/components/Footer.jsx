@@ -42,21 +42,19 @@ const Footer = ({ logo, navLinks = [] }) => {
                 </li>
               ))}
               <li>
-                <button 
-                  onClick={() => setPortalModalOpen(true)}
+                <Link 
+                  to="/member-portal"
                   style={{
-                    background: 'none',
-                    border: 'none',
                     color: 'var(--color-accent)',
                     fontWeight: '700',
-                    cursor: 'pointer',
-                    padding: 0,
                     fontSize: '0.9rem',
-                    fontFamily: 'inherit'
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
-                  <FaShieldAlt style={{ marginRight: '6px' }} /> Member Login
-                </button>
+                  <FaShieldAlt /> Member & Official Portal
+                </Link>
               </li>
             </ul>
           </div>

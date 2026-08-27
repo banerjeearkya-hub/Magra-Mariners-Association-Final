@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  RecaptchaVerifier, 
-  signInWithPhoneNumber 
-} from 'firebase/auth';
-import { 
   collection, 
   query, 
   where, 
@@ -14,39 +10,53 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import { 
-  FaUserPlus, 
   FaUserCheck, 
   FaMobileAlt, 
   FaKey, 
   FaArrowLeft, 
   FaCheckCircle, 
   FaExclamationTriangle, 
-  FaTimesCircle,
   FaClock,
   FaShieldAlt,
-  FaIdCard
+  FaIdCard,
+  FaUserShield,
+  FaArrowRight
 } from 'react-icons/fa';
-import { auth, db } from '../firebase/config';
-import { sendMemberOTP, verifyMemberOTP, normalizeMobileNumber } from '../services/otpService';
+import { db } from '../firebase/config';
+import { 
+  sendMemberPhoneOTP, 
+  verifyMemberPhoneOTP, 
+  normalizeMobileNumber, 
+  formatFirebaseError 
+} from '../services/otpService';
 import logoImg from '../assets/logo.png';
 import './MemberPortal.css';
 
+// List of authorized official numbers for automatic access detection
+const AUTHORIZED_OFFICIAL_MOBILES = [
+  '+919475083599',
+  '9475083599',
+  '+919876543210'
+];
+
 const MemberPortal = () => {
-  const [activeTab, setActiveTab] = useState('register'); // 'register' | 'login'
+  // Form Input States
+  const [fullName, setFullName] = useState('');
+  const [mobileInput, setMobileInput] = useState('');
   
-  // Registration Form State
-  const [regName, setRegName] = useState('');
-  const [regMobile, setRegMobile] = useState('');
-  
-  // Login Form State
-  const [loginMobile, setLoginMobile] = useState('');
-  
-  // OTP Verification Shared State
-  const [step, setStep] = useState(1); // 1: Info Entry, 2: OTP Verification, 3: Success / Logged-in Card
+  // Step Flow:
+  // 1: Phone & Name Input
+  // 2: 6-Digit OTP Verification
+  // 3: Verified Result Card (Role Auto-Detected)
+  const [step, setStep] = useState(1);
   const [otpInput, setOtpInput] = useState('');
   const [confirmationResult, setConfirmationResult] = useState(null);
-  const [memberData, setMemberData] = useState(null);
+  const [formattedMobileNum, setFormattedMobileNum] = useState('');
   
+  // Post-Verification Data
+  const [isOfficial, setIsOfficial] = useState(false);
+  const [memberRecord, setMemberRecord] = useState(null);
+
   // Timers & Alerts
   const [cooldown, setCooldown] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -55,7 +65,7 @@ const MemberPortal = () => {
 
   const navigate = useNavigate();
 
-  // Cooldown timer interval
+  // Cooldown interval timer for OTP resends
   useEffect(() => {
     let timer;
     if (cooldown > 0) {
@@ -66,7 +76,7 @@ const MemberPortal = () => {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // Clean up recaptcha verifier on unmount
+  // Clean up reCAPTCHA verifier on unmount
   useEffect(() => {
     return () => {
       if (window.recaptchaVerifier) {
@@ -80,148 +90,72 @@ const MemberPortal = () => {
     };
   }, []);
 
-  // Format 10-digit mobile number to standard +91 E.164 format
-  const formatMobileNumber = (raw) => {
-    const cleaned = raw.replace(/\D/g, '');
-    if (cleaned.length === 10) {
-      return `+91${cleaned}`;
-    }
-    if (cleaned.length === 12 && cleaned.startsWith('91')) {
-      return `+${cleaned}`;
-    }
-    return raw.trim();
-  };
-
-  // Setup Recaptcha
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'portal-recaptcha-container', {
-        size: 'invisible',
-        callback: () => {},
-        'expired-callback': () => {
-          setError('reCAPTCHA expired. Please resend OTP.');
-        }
-      });
-    }
-  };
-
-  // --- STEP 1A: REGISTER NEW MEMBER ---
-  const handleRegisterSendOTP = async (e) => {
+  // --- STEP 1: SEND REAL OTP ---
+  const handleSendOTP = async (e) => {
     e.preventDefault();
     setError('');
     setSuccessMsg('');
 
-    if (!regName.trim()) {
-      setError('Please enter your full name.');
+    const digitsOnly = mobileInput.replace(/\D/g, '');
+    if (digitsOnly.length < 10) {
+      setError('Please enter a valid 10-digit Indian mobile number.');
       return;
     }
 
-    const cleanedDigits = regMobile.replace(/\D/g, '');
-    if (cleanedDigits.length < 10) {
-      setError('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    const formattedMobile = normalizeMobileNumber(regMobile);
+    const normalizedMobile = normalizeMobileNumber(mobileInput);
+    setFormattedMobileNum(normalizedMobile);
     setLoading(true);
 
     try {
-      // 1. Check for duplicate registration in Firestore 'members'
+      // 1. Check if member already exists in Firestore 'members' collection
       const membersRef = collection(db, 'members');
       const q = query(
         membersRef, 
-        where('mobileNumber', 'in', [formattedMobile, cleanedDigits, `+91 ${cleanedDigits}`])
+        where('mobileNumber', 'in', [normalizedMobile, digitsOnly, `+91 ${digitsOnly}`])
       );
       const snapshot = await getDocs(q);
 
       if (!snapshot.empty) {
-        setError('This mobile number is already registered.');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Trigger Real Random OTP Engine
-      const res = await sendMemberOTP(formattedMobile);
-      setConfirmationResult(res.confirmationResult);
-
-      setCooldown(45); // 45s resend cooldown timer
-      setSuccessMsg(`OTP sent to ${formattedMobile}. Please check your phone for the 6-digit verification code.`);
-      setStep(2);
-    } catch (err) {
-      console.error('OTP Send Error:', err);
-      setError('Unable to send OTP: ' + (err.message || 'Please try again.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // --- STEP 1B: MEMBER LOGIN ---
-  const handleLoginSendOTP = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    const cleanedDigits = loginMobile.replace(/\D/g, '');
-    if (cleanedDigits.length < 10) {
-      setError('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    const formattedMobile = normalizeMobileNumber(loginMobile);
-    setLoading(true);
-
-    try {
-      // Check if registered in Firestore 'members'
-      const membersRef = collection(db, 'members');
-      const q = query(
-        membersRef, 
-        where('mobileNumber', 'in', [formattedMobile, cleanedDigits, `+91 ${cleanedDigits}`])
-      );
-      const snapshot = await getDocs(q);
-
-      let foundMember = null;
-      if (!snapshot.empty) {
-        const matchedDoc = snapshot.docs[0];
-        foundMember = { id: matchedDoc.id, ...matchedDoc.data() };
-      } else if (cleanedDigits.includes('9475083599') || cleanedDigits.includes('9876543210')) {
-        // Pre-seeded fallback default member record
-        foundMember = {
-          id: 'subhankar-default-doc',
-          name: 'Subhankar Banerjee',
-          mobileNumber: '+919475083599',
-          mobileVerified: true,
-          status: 'Verified',
-          createdAtIso: new Date().toISOString()
-        };
+        const existingDoc = snapshot.docs[0];
+        setMemberRecord({ id: existingDoc.id, ...existingDoc.data() });
       } else {
-        setError('Member not found with this mobile number. Please register as a new member first.');
+        setMemberRecord(null);
+      }
+
+      // Check if official number
+      const officialMatch = AUTHORIZED_OFFICIAL_MOBILES.some(num => normalizedMobile.includes(num) || digitsOnly.includes(num));
+      setIsOfficial(officialMatch);
+
+      // If new member and full name not entered yet, prompt for name
+      if (snapshot.empty && !officialMatch && !fullName.trim()) {
+        setError('New member detected. Please enter your Full Name before requesting OTP.');
         setLoading(false);
         return;
       }
 
-      setMemberData(foundMember);
-
-      // Trigger Real Random OTP Engine
-      const res = await sendMemberOTP(formattedMobile);
+      // 2. Trigger OTP Dispatch (generates fresh random OTP)
+      const res = await sendMemberPhoneOTP(normalizedMobile, 'portal-recaptcha-container');
       setConfirmationResult(res.confirmationResult);
 
-      setCooldown(45);
-      setSuccessMsg(`OTP sent to ${formattedMobile}. Please enter the 6-digit verification code.`);
+      setCooldown(45); // 45-second resend cooldown timer
+      setSuccessMsg(`OTP sent to ${normalizedMobile}. Please enter the 6-digit verification code.`);
       setStep(2);
     } catch (err) {
-      console.error('Login OTP Error:', err);
-      setError('Unable to send OTP: ' + (err.message || 'Please try again.'));
+      console.error('Send OTP Failure:', err);
+      setError(formatFirebaseError(err));
     } finally {
       setLoading(false);
     }
   };
 
-  // --- STEP 2: VERIFY OTP & COMPLETE ACTION ---
+  // --- STEP 2: VERIFY OTP & ROUTE BASED ON ROLE ---
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
 
-    if (!otpInput || otpInput.trim().length < 4) {
+    const cleanOTP = otpInput.trim();
+    if (!cleanOTP || cleanOTP.length < 4) {
       setError('Please enter the 6-digit OTP code received on your mobile phone.');
       return;
     }
@@ -229,61 +163,69 @@ const MemberPortal = () => {
     setLoading(true);
 
     try {
-      const targetMobile = activeTab === 'register' ? regMobile : loginMobile;
-      const formattedMobile = normalizeMobileNumber(targetMobile);
+      // 1. Verify OTP
+      await verifyMemberPhoneOTP(formattedMobileNum, cleanOTP, confirmationResult);
 
-      // Verify OTP against active Cloud Firestore session / Firebase Auth
-      await verifyMemberOTP(formattedMobile, otpInput, confirmationResult);
+      // 2. Role Check: Is Official?
+      const officialMatch = AUTHORIZED_OFFICIAL_MOBILES.some(num => formattedMobileNum.includes(num));
 
-      if (activeTab === 'register') {
-        // SAVE VERIFIED MEMBER IN FIRESTORE ONLY AFTER SUCCESSFUL OTP VERIFICATION
-        const newMemberPayload = {
-          name: regName.trim(),
-          mobileNumber: formattedMobile,
+      if (officialMatch || isOfficial) {
+        setIsOfficial(true);
+        setSuccessMsg('Official identity verified! Redirecting to Official Portal...');
+        setStep(3);
+        return;
+      }
+
+      // 3. Member Check: Existing vs New Member
+      if (memberRecord) {
+        // Existing verified member
+        setSuccessMsg('Mobile number verified successfully.');
+        setStep(3);
+      } else {
+        // Create new member record in Firestore
+        const nowIso = new Date().toISOString();
+        const newPayload = {
+          name: fullName.trim(),
+          fullName: fullName.trim(),
+          mobileNumber: formattedMobileNum,
           mobileVerified: true,
-          otpVerified: true,
           status: 'Pending Verification',
           createdAt: serverTimestamp(),
-          createdAtIso: new Date().toISOString(),
+          createdAtIso: nowIso,
           verifiedAt: null,
           verifiedBy: null
         };
 
-        const docRef = await addDoc(collection(db, 'members'), newMemberPayload);
-        const createdMember = { id: docRef.id, ...newMemberPayload };
+        const docRef = await addDoc(collection(db, 'members'), newPayload);
+        const createdDoc = { id: docRef.id, ...newPayload };
 
-        setMemberData(createdMember);
-        setSuccessMsg('Registration successful. Your application is pending admin verification.');
-        setStep(3);
-      } else {
-        // LOGIN COMPLETED
-        setSuccessMsg('Login successful!');
+        setMemberRecord(createdDoc);
+        setSuccessMsg('Registration successful. Application pending admin verification.');
         setStep(3);
       }
     } catch (err) {
-      console.error('OTP Verification Failure:', err);
-      setError(err.message || 'Invalid OTP code. Please check and try again.');
+      console.error('Verify OTP Failure:', err);
+      setError(formatFirebaseError(err));
     } finally {
       setLoading(false);
     }
   };
 
+  // --- RESEND OTP ---
   const handleResendOTP = async () => {
-    if (cooldown > 0) return;
+    if (cooldown > 0 || loading) return;
     setError('');
     setSuccessMsg('');
-    const targetMobile = activeTab === 'register' ? regMobile : loginMobile;
-    const formattedMobile = normalizeMobileNumber(targetMobile);
 
     setLoading(true);
     try {
-      const res = await sendMemberOTP(formattedMobile);
+      const res = await sendMemberPhoneOTP(formattedMobileNum, 'portal-recaptcha-container');
       setConfirmationResult(res.confirmationResult);
       setCooldown(45);
-      setSuccessMsg(`A fresh 6-digit OTP code has been sent to ${formattedMobile}`);
+      setSuccessMsg(`A fresh OTP code has been sent to ${formattedMobileNum}`);
     } catch (err) {
       console.error('Resend OTP Error:', err);
-      setError('Unable to resend OTP: ' + (err.message || 'Please try again.'));
+      setError(formatFirebaseError(err));
     } finally {
       setLoading(false);
     }
@@ -294,11 +236,14 @@ const MemberPortal = () => {
     setOtpInput('');
     setError('');
     setSuccessMsg('');
-    setMemberData(null);
+    setMemberRecord(null);
+    setConfirmationResult(null);
+    setIsOfficial(false);
   };
 
   return (
     <div className="member-portal-container">
+      {/* Invisible reCAPTCHA container for Firebase Phone Auth */}
       <div id="portal-recaptcha-container"></div>
 
       {/* Background ambient glow */}
@@ -311,36 +256,19 @@ const MemberPortal = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* Card Header */}
+        {/* Header */}
         <div className="portal-card-header">
           <Link to="/" className="back-link">
-            <FaArrowLeft /> Back to Website
+            <FaArrowLeft /> Back to Main Website
           </Link>
 
           <div className="portal-logo-group">
             <img src={logoImg} alt="MMA Crest" className="portal-crest" />
             <div>
               <h2>Magra Mariners Association</h2>
-              <span className="portal-sub-badge"><FaIdCard /> MEMBER PORTAL</span>
+              <span className="portal-sub-badge"><FaShieldAlt /> MEMBER & OFFICIAL PORTAL</span>
             </div>
           </div>
-
-          {step < 3 && (
-            <div className="portal-tab-selector">
-              <button 
-                className={`portal-tab-btn ${activeTab === 'register' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('register'); resetFlow(); }}
-              >
-                <FaUserPlus /> New Member Registration
-              </button>
-              <button 
-                className={`portal-tab-btn ${activeTab === 'login' ? 'active' : ''}`}
-                onClick={() => { setActiveTab('login'); resetFlow(); }}
-              >
-                <FaUserCheck /> Member Login
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Feedback Alerts */}
@@ -370,21 +298,9 @@ const MemberPortal = () => {
           )}
         </AnimatePresence>
 
-        {/* STEP 1: INFO ENTRY FORM */}
-        {step === 1 && activeTab === 'register' && (
-          <form onSubmit={handleRegisterSendOTP} className="portal-form">
-            <div className="form-group">
-              <label htmlFor="reg-name">Full Name *</label>
-              <input 
-                id="reg-name"
-                type="text"
-                required
-                placeholder="e.g. Subhankar Banerjee"
-                value={regName}
-                onChange={(e) => setRegName(e.target.value)}
-              />
-            </div>
-
+        {/* STEP 1: MOBILE & NAME INPUT */}
+        {step === 1 && (
+          <form onSubmit={handleSendOTP} className="portal-form">
             <div className="form-group">
               <label htmlFor="reg-mobile">Mobile Number (10 Digits) *</label>
               <div className="input-wrapper">
@@ -395,49 +311,42 @@ const MemberPortal = () => {
                   required
                   maxLength={10}
                   placeholder="Enter 10-digit mobile number"
-                  value={regMobile}
-                  onChange={(e) => setRegMobile(e.target.value.replace(/\D/g, ''))}
+                  value={mobileInput}
+                  onChange={(e) => setMobileInput(e.target.value.replace(/\D/g, ''))}
                 />
               </div>
-              <small className="form-help">An SMS OTP will be sent to verify your mobile number.</small>
+              <small className="form-help">Members and Officials enter mobile number to verify.</small>
+            </div>
+
+            <div className="form-group" style={{ marginTop: '10px' }}>
+              <label htmlFor="reg-fullname">Full Name (Required for New Registration)</label>
+              <input 
+                id="reg-fullname"
+                type="text"
+                placeholder="e.g. Subhankar Banerjee"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
             </div>
 
             <button type="submit" className="btn-primary submit-portal-btn" disabled={loading}>
-              <FaMobileAlt /> {loading ? 'Checking Mobile...' : 'Send OTP'}
+              <FaMobileAlt /> {loading ? 'Sending OTP...' : 'Send OTP'}
             </button>
           </form>
         )}
 
-        {step === 1 && activeTab === 'login' && (
-          <form onSubmit={handleLoginSendOTP} className="portal-form">
-            <div className="form-group">
-              <label htmlFor="login-mobile">Registered Mobile Number *</label>
-              <div className="input-wrapper">
-                <span className="country-prefix">+91</span>
-                <input 
-                  id="login-mobile"
-                  type="tel"
-                  required
-                  maxLength={10}
-                  placeholder="Enter registered mobile number"
-                  value={loginMobile}
-                  onChange={(e) => setLoginMobile(e.target.value.replace(/\D/g, ''))}
-                />
-              </div>
-              <small className="form-help">Enter the mobile number used during registration.</small>
-            </div>
-
-            <button type="submit" className="btn-primary submit-portal-btn" disabled={loading}>
-              <FaMobileAlt /> {loading ? 'Verifying Member...' : 'Send OTP'}
-            </button>
-          </form>
-        )}
-
-        {/* STEP 2: OTP VERIFICATION */}
+        {/* STEP 2: 6-DIGIT OTP VERIFICATION */}
         {step === 2 && (
           <form onSubmit={handleVerifyOTP} className="portal-form">
             <div className="form-group">
-              <label htmlFor="otp-input">Enter OTP Received via SMS *</label>
+              <h3 style={{ color: '#fff', fontSize: '1.2rem', marginBottom: '6px', fontWeight: '700' }}>
+                OTP Verification
+              </h3>
+              <p style={{ color: '#aaa', fontSize: '0.88rem', marginBottom: '16px' }}>
+                Enter the 6-digit OTP sent to <strong>{formattedMobileNum}</strong>
+              </p>
+
+              <label htmlFor="otp-input">Enter 6-Digit OTP *</label>
               <div className="input-wrapper">
                 <FaKey className="input-icon" />
                 <input 
@@ -451,13 +360,10 @@ const MemberPortal = () => {
                   autoFocus
                 />
               </div>
-              <small className="form-help">
-                Sent to +91 {activeTab === 'register' ? regMobile : loginMobile}
-              </small>
             </div>
 
             <button type="submit" className="btn-primary submit-portal-btn" disabled={loading}>
-              <FaUserCheck /> {loading ? 'Verifying OTP...' : 'Verify OTP & Complete'}
+              <FaUserCheck /> {loading ? 'Verifying OTP...' : 'Verify OTP'}
             </button>
 
             <div className="otp-actions-row">
@@ -471,73 +377,92 @@ const MemberPortal = () => {
               </button>
 
               <button type="button" className="change-num-btn" onClick={resetFlow}>
-                Change Mobile
+                Change Number
               </button>
             </div>
           </form>
         )}
 
-        {/* STEP 3: MEMBER STATUS CARD */}
-        {step === 3 && memberData && (
+        {/* STEP 3: ROLE AUTO-DETECTED RESULT CARD */}
+        {step === 3 && (
           <div className="member-status-display-card glassmorphism">
-            <div className="status-card-header">
-              <div className="member-avatar-circle">
-                <FaUserCheck />
+            {isOfficial ? (
+              /* OFFICIAL ACCESS CARD */
+              <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                <div className="member-avatar-circle" style={{ margin: '0 auto 16px auto', background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)' }}>
+                  <FaUserShield />
+                </div>
+                <h3 className="member-name-title" style={{ fontSize: '1.4rem', color: '#fff' }}>Authorized Official</h3>
+                <p style={{ color: '#aaa', fontSize: '0.9rem', margin: '6px 0 20px 0' }}>
+                  Verified Mobile: <strong style={{ color: '#4ade80' }}>{formattedMobileNum}</strong>
+                </p>
+
+                <button 
+                  className="btn-primary" 
+                  style={{ width: '100%', padding: '14px', borderRadius: '25px', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '8px', fontSize: '1rem', fontWeight: '800' }}
+                  onClick={() => navigate('/login')}
+                >
+                  <FaShieldAlt /> Open Official Portal Dashboard <FaArrowRight />
+                </button>
               </div>
+            ) : memberRecord ? (
+              /* MEMBER CARD: NAME & MEMBERSHIP STATUS ONLY */
               <div>
-                <span className="label-sub">Member Profile</span>
-                <h3 className="member-name-title">{memberData.name}</h3>
-                <span className="member-mobile-text"><FaMobileAlt /> {memberData.mobileNumber}</span>
+                <div className="status-card-header">
+                  <div className="member-avatar-circle">
+                    <FaUserCheck />
+                  </div>
+                  <div>
+                    <span className="label-sub">Member Profile</span>
+                    <h3 className="member-name-title">{memberRecord.name || memberRecord.fullName}</h3>
+                    <span className="member-mobile-text"><FaMobileAlt /> {memberRecord.mobileNumber || formattedMobileNum}</span>
+                  </div>
+                </div>
+
+                <div className="status-badge-container" style={{ marginTop: '20px' }}>
+                  <span className="label-sub">Membership Status</span>
+                  {(memberRecord.status === 'Pending Verification' || !memberRecord.status) && (
+                    <div className="status-badge-box status-amber">
+                      <FaClock />
+                      <div>
+                        <strong>Pending Verification</strong>
+                        <p>Your application is pending admin verification.</p>
+                      </div>
+                    </div>
+                  )}
+                  {memberRecord.status === 'Verified' && (
+                    <div className="status-badge-box status-green">
+                      <FaCheckCircle />
+                      <div>
+                        <strong>Verified Member</strong>
+                        <p>Approved member of Magra Mariners Association.</p>
+                      </div>
+                    </div>
+                  )}
+                  {memberRecord.status === 'Rejected' && (
+                    <div className="status-badge-box status-red">
+                      <FaExclamationTriangle />
+                      <div>
+                        <strong>Application Rejected</strong>
+                        <p>Please contact an association official for details.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="status-card-actions" style={{ marginTop: '20px' }}>
+                  <button className="btn-secondary" onClick={resetFlow}>
+                    Sign Out / Close Session
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="status-badge-container">
-              <span className="label-sub">Application Verification Status</span>
-              {memberData.status === 'Pending Verification' && (
-                <div className="status-badge-box status-amber">
-                  <FaClock />
-                  <div>
-                    <strong>Pending Verification</strong>
-                    <p>Your application has been received and is pending admin verification.</p>
-                  </div>
-                </div>
-              )}
-              {memberData.status === 'Verified' && (
-                <div className="status-badge-box status-green">
-                  <FaCheckCircle />
-                  <div>
-                    <strong>Verified Member</strong>
-                    <p>Your membership application has been approved by the Magra Mariners Association Admin.</p>
-                  </div>
-                </div>
-              )}
-              {memberData.status === 'Rejected' && (
-                <div className="status-badge-box status-red">
-                  <FaTimesCircle />
-                  <div>
-                    <strong>Application Rejected</strong>
-                    <p>Please contact the Executive Committee for details regarding your application.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="status-card-actions">
-              <button className="btn-secondary" onClick={resetFlow}>
-                Close Session
-              </button>
-            </div>
+            ) : null}
           </div>
         )}
 
-        {/* Footer info & Official Portal Link */}
+        {/* Footer */}
         <div className="portal-footer-info">
-          <p>Applications are verified manually by authorized association officials.</p>
-          <div className="official-link-wrapper">
-            <Link to="/login" className="official-portal-link">
-              <FaShieldAlt /> Official Portal Sign-In →
-            </Link>
-          </div>
+          <p>Magra Mariners Association Official Portal. Applications are verified manually by authorized officials.</p>
         </div>
       </motion.div>
     </div>

@@ -52,7 +52,7 @@ const PortalModal = ({ isOpen, onClose }) => {
               </div>
               <div className="portal-option-text">
                 <h4>Member Portal</h4>
-                <p>Register as a new member or check your application verification status via Mobile OTP.</p>
+                <p>Register as a new member via Mobile SMS OTP verification.</p>
               </div>
               <div className="portal-arrow">
                 <FaArrowRight />

@@ -64,12 +64,12 @@ const Navbar = ({ navLinks = [] }) => {
               </li>
             ))}
             <li className="navbar-item">
-              <button 
+              <Link 
+                to="/member-portal"
                 className="navbar-official-btn"
-                onClick={() => setPortalModalOpen(true)}
               >
-                <FaShieldAlt style={{ marginRight: '6px' }} /> Member Login
-              </button>
+                <FaShieldAlt style={{ marginRight: '6px' }} /> Member & Official Portal
+              </Link>
             </li>
           </ul>
 
@@ -100,16 +100,13 @@ const Navbar = ({ navLinks = [] }) => {
               </li>
             ))}
             <li className="navbar-item-mobile" style={{ marginTop: '10px' }}>
-              <button 
+              <Link 
+                to="/member-portal" 
                 className="navbar-link-mobile official-mobile-link"
-                style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer' }}
-                onClick={() => {
-                  setIsOpen(false);
-                  setPortalModalOpen(true);
-                }}
+                onClick={() => setIsOpen(false)}
               >
-                🛡️ Member Login
-              </button>
+                🛡️ Member & Official Portal
+              </Link>
             </li>
           </ul>
         </div>
