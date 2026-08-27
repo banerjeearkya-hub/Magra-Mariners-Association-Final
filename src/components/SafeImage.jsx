@@ -1,107 +1,54 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaImage, FaRedo } from 'react-icons/fa';
 import './SafeImage.css';
 
 /**
  * SafeImage Component
- * Prevents infinite loading, auto-recovers gallery paths, and handles image load failures gracefully.
+ * Clean, fast, and fail-proof image rendering with automatic path recovery.
  */
 const SafeImage = ({
   src,
-  alt = 'Image',
+  alt = 'Photo',
   className = '',
   containerClassName = '',
   fallbackText = 'Photo unavailable',
-  timeoutMs = 15000, // Increased timeout to 15s for slow mobile networks
   showRetry = true,
-  onClick,
-  loading = 'lazy'
+  onClick
 }) => {
-  const [status, setStatus] = useState('loading'); // 'loading' | 'loaded' | 'error'
+  const [hasError, setHasError] = useState(false);
   const [currentSrc, setCurrentSrc] = useState(src);
   const [retryCount, setRetryCount] = useState(0);
-  const timerRef = useRef(null);
 
   useEffect(() => {
-    if (!src) {
-      setStatus('error');
-      return;
-    }
-
+    setHasError(false);
     setCurrentSrc(src);
-    setStatus('loading');
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setStatus((currentStatus) => (currentStatus === 'loading' ? 'error' : currentStatus));
-    }, timeoutMs);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [src, retryCount, timeoutMs]);
-
-  const handleLoad = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setStatus('loaded');
-  };
+  }, [src, retryCount]);
 
   const handleError = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-
     // Path recovery attempt for relative gallery paths
     if (currentSrc && typeof currentSrc === 'string' && !currentSrc.startsWith('http') && !currentSrc.startsWith('data:')) {
       if (currentSrc.startsWith('./')) {
-        const altPath = currentSrc.replace(/^\.\//, '');
-        setCurrentSrc(altPath);
+        setCurrentSrc(currentSrc.replace(/^\.\//, ''));
         return;
       }
       if (currentSrc.startsWith('/')) {
-        const altPath = `.${currentSrc}`;
-        setCurrentSrc(altPath);
+        setCurrentSrc(`.${currentSrc}`);
         return;
       }
     }
-
-    setStatus('error');
+    setHasError(true);
   };
 
   const handleRetry = (e) => {
     if (e) e.stopPropagation();
-    if (retryCount < 3) {
-      setStatus('loading');
-      setCurrentSrc(src);
-      setRetryCount((prev) => prev + 1);
-    }
+    setHasError(false);
+    setCurrentSrc(src);
+    setRetryCount(prev => prev + 1);
   };
 
-  return (
-    <div 
-      className={`safe-image-container ${containerClassName} ${status === 'error' ? 'image-error-state' : ''}`}
-      onClick={onClick}
-    >
-      {/* Loading Skeleton */}
-      {status === 'loading' && (
-        <div className="safe-image-skeleton">
-          <div className="skeleton-pulse"></div>
-        </div>
-      )}
-
-      {/* Actual Image */}
-      {currentSrc && status !== 'error' && (
-        <img
-          key={`${currentSrc}-${retryCount}`}
-          src={currentSrc}
-          alt={alt}
-          className={`safe-image-img ${className} ${status === 'loaded' ? 'image-visible' : 'image-hidden'}`}
-          onLoad={handleLoad}
-          onError={handleError}
-          loading={loading}
-        />
-      )}
-
-      {/* Fallback View on Error / Timeout */}
-      {status === 'error' && (
+  if (hasError || !currentSrc) {
+    return (
+      <div className={`safe-image-container ${containerClassName} image-error-state`} onClick={onClick}>
         <div className="safe-image-fallback">
           <FaImage className="fallback-icon" />
           <span className="fallback-text">{fallbackText}</span>
@@ -116,7 +63,20 @@ const SafeImage = ({
             </button>
           )}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`safe-image-container ${containerClassName}`} onClick={onClick}>
+      <img
+        key={`${currentSrc}-${retryCount}`}
+        src={currentSrc}
+        alt={alt}
+        className={`safe-image-img ${className}`}
+        onError={handleError}
+        loading="eager"
+      />
     </div>
   );
 };
